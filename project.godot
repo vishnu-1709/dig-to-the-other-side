@@ -25,3 +25,5 @@ textures/vram_compression/import_etc2_astc=true
 
 Game="*res://scripts/autoload/game.gd"
 Portal="*res://scripts/autoload/portal.gd"
+Save="*res://scripts/autoload/save.gd"
+Music="*res://scripts/autoload/music.gd"

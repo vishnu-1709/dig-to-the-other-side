@@ -1,0 +1,83 @@
+extends Node
+## Persists progress to user:// (IndexedDB on the web). Versioned so later fields can be migrated.
+## Saves every 10 s, after runs and purchases. Open the game with ?reset to wipe progress.
+
+const PATH := "user://save.json"
+const VERSION := 1
+const INTERVAL_S := 10.0
+
+var enabled := true
+var _timer := 0.0
+
+
+func _ready() -> void:
+	enabled = not ("--autoplay" in OS.get_cmdline_user_args())
+	if not enabled:
+		return
+	if OS.has_feature("web") and str(JavaScriptBridge.eval("location.search")).contains("reset"):
+		wipe()
+	load_game()
+	Game.levels_changed.connect(save_game)
+
+
+func _process(delta: float) -> void:
+	if not enabled:
+		return
+	_timer += delta / maxf(Engine.time_scale, 0.001)
+	if _timer >= INTERVAL_S:
+		_timer = 0.0
+		save_game()
+
+
+func _notification(what: int) -> void:
+	if what in [NOTIFICATION_WM_CLOSE_REQUEST, NOTIFICATION_APPLICATION_PAUSED, NOTIFICATION_APPLICATION_FOCUS_OUT]:
+		save_game()
+
+
+func save_game() -> void:
+	if not enabled:
+		return
+	var data := {
+		"version": VERSION,
+		"coins": Game.coins,
+		"levels": Game.levels,
+		"deepest_biome": Game.deepest_biome,
+		"best_row": Game.best_row,
+		"saved_at": Time.get_unix_time_from_system(),
+	}
+	var f := FileAccess.open(PATH, FileAccess.WRITE)
+	if f == null:
+		push_warning("save failed: %s" % FileAccess.get_open_error())
+		return
+	f.store_string(JSON.stringify(data))
+
+
+func load_game() -> void:
+	if not FileAccess.file_exists(PATH):
+		return
+	var f := FileAccess.open(PATH, FileAccess.READ)
+	if f == null:
+		return
+	var data = JSON.parse_string(f.get_as_text())
+	if not (data is Dictionary):
+		push_warning("save unreadable, starting fresh")
+		return
+	data = _migrate(data)
+	Game.coins = float(data.get("coins", 0.0))
+	var lv: Dictionary = data.get("levels", {})
+	for k in Game.levels:
+		Game.levels[k] = int(lv.get(k, 0))
+	Game.deepest_biome = clampi(int(data.get("deepest_biome", 0)), 0, Game.biomes.size() - 1)
+	Game.best_row = int(data.get("best_row", 0))
+	print("SAVE loaded coins=%.0f deepest=%d" % [Game.coins, Game.deepest_biome])
+
+
+func wipe() -> void:
+	if FileAccess.file_exists(PATH):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(PATH))
+	print("SAVE wiped")
+
+
+func _migrate(data: Dictionary) -> Dictionary:
+	# version 1 is current; future versions add steps here
+	return data

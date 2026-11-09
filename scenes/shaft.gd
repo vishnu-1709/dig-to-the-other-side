@@ -151,6 +151,7 @@ func _step(delta: float) -> void:
 		var value := float(b["ore_value"] if t == ORE else b["rock_value"]) * Game.ore_mult()
 		earned += value
 		if t == ORE:
+			Music.ore()
 			_popup(_cell_center(col, row) + Vector2(30, -20), "+" + Game.fmt(value), ORE_COL[bi % ORE_COL.size()])
 			_shake = maxf(_shake, 4.0)
 		if row > Game.best_row:
@@ -160,6 +161,7 @@ func _step(delta: float) -> void:
 			Game.pending_midgame = true
 			_popup(_cell_center(COLS / 2, row) + Vector2(-140, -60), String(b["name"]).to_upper(), Color.WHITE)
 			_shake = 10.0
+			Music.set_biome(bi)
 			biome_entered.emit(bi)
 		steps += 1
 		if delta <= 0.0:

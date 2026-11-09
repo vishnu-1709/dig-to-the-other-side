@@ -66,6 +66,7 @@ func _start_run() -> void:
 	_hub.visible = false
 	_hud.visible = true
 	shaft.start()
+	Music.start_run(Game.biome_index(shaft.row))
 	Portal.gameplay_start()
 
 
@@ -75,6 +76,7 @@ func _on_run_ended(earned: float, end_row: int, breakthrough: bool) -> void:
 	_last_earned = earned
 	_breakthrough = breakthrough
 	Portal.gameplay_stop()
+	Music.stop_run()
 	_hud.visible = false
 	if Game.pending_midgame:
 		Game.pending_midgame = false
@@ -91,6 +93,8 @@ func _collect(mult: float) -> void:
 		return
 	_result_ready = false
 	Game.add_coins(_last_earned * mult)
+	Music.sfx("coin", -2.0)
+	Save.save_game()
 	print("COLLECT %.1f x%.1f total=%.1f" % [_last_earned, mult, Game.coins])
 	_show_hub()
 
@@ -106,6 +110,7 @@ func _double() -> void:
 
 func _buy(key: String) -> void:
 	if state == State.HUB and Game.buy(key):
+		Music.sfx("upgrade", -4.0)
 		_refresh_hub()
 
 
@@ -279,6 +284,7 @@ func _button(parent: Control, text: String, cb: Callable) -> Button:
 	b.text = text
 	b.focus_mode = Control.FOCUS_NONE
 	b.custom_minimum_size = Vector2(560, 64)
+	b.pressed.connect(func(): Music.sfx("click", -8.0))
 	b.pressed.connect(cb)
 	parent.add_child(b)
 	return b
