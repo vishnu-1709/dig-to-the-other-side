@@ -1,3 +1,4 @@
+class_name Shaft
 extends Node2D
 ## One dig run. Blocks are computed from a hash of (col, row) — only dug cells are stored,
 ## and only on-screen rows are drawn. Drill steps one row at a time, shifting at most one
@@ -41,14 +42,31 @@ var _shake := 0.0
 var _cam: Camera2D
 var _font: Font
 var _ore_p := 0.12
+var _tiles: Array = []
+var _bgs: Array = []
+var _drill_tex: Texture2D
+var _fx: Node2D
+var _time := 0.0
+var _tilt := 0.0
 var _hard_p := 0.08
 
 
 func _ready() -> void:
+	texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	_cam = Camera2D.new()
 	add_child(_cam)
 	_cam.make_current()
-	_font = ThemeDB.fallback_font
+	_font = load("res://assets/fonts/Fredoka-SemiBold.woff2")
+	if _font == null:
+		_font = ThemeDB.fallback_font
+	for i in range(8):
+		_tiles.append(load("res://assets/art/tiles_%d.png" % i))
+		_bgs.append(load("res://assets/art/bg_%d.png" % i))
+	_drill_tex = load("res://assets/art/drill.png")
+	_fx = preload("res://scenes/fx.gd").new()
+	_fx.shaft = self
+	add_child(_fx)
+	block_dug.connect(_fx.on_block_dug)
 	_ore_p = float(Game.config.get("ore_p", 0.12))
 	_hard_p = float(Game.config.get("hard_p", 0.08))
 	prepare()
@@ -137,6 +155,7 @@ func bot_target_col() -> int:
 
 
 func _process(delta: float) -> void:
+	_time += delta
 	if running:
 		_step(delta)
 	var next_col := col + signi(target_col - col)
@@ -185,7 +204,6 @@ func _step(delta: float) -> void:
 		if bi > Game.deepest_biome:
 			Game.deepest_biome = bi
 			Game.pending_midgame = true
-			_popup(_cell_center(COLS / 2, row) + Vector2(-140, -60), String(b["name"]).to_upper(), Color.WHITE)
 			_shake = 10.0
 			Music.set_biome(bi)
 			biome_entered.emit(bi)
@@ -270,43 +288,98 @@ func _update_camera(delta: float) -> void:
 	_cam.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * _shake
 
 
-func _draw() -> void:
+const ATLAS := 96.0
+const IDX_HARD := 3
+const IDX_HAZARD := 4
+const IDX_ORE := 5
+const IDX_WALL := 6
+
+
+func drill_pos() -> Vector2:
+	return _drill_pos
+
+
+func view_rows() -> Vector2i:
 	var vis := get_viewport_rect().size / _cam.zoom
 	var top := int(floor((_cam.position.y - vis.y * 0.5) / TILE)) - 1
 	var bottom := int(ceil((_cam.position.y + vis.y * 0.5) / TILE)) + 1
-	var left := -int(ceil((vis.x * 0.5 - COLS * TILE * 0.5) / TILE)) - 1
-	draw_rect(Rect2(left * TILE, top * TILE, -left * TILE, (bottom - top) * TILE), Color("0b0820"))
-	draw_rect(Rect2(COLS * TILE, top * TILE, -left * TILE, (bottom - top) * TILE), Color("0b0820"))
-	for r in range(top, bottom):
+	return Vector2i(top, bottom)
+
+
+func _draw() -> void:
+	var vis := get_viewport_rect().size / _cam.zoom
+	var rows := view_rows()
+	var x0 := _cam.position.x - vis.x * 0.5 - TILE
+	var w := vis.x + TILE * 2
+	# parallax background strips, per row so biome changes line up with the blocks
+	for r in range(rows.x, rows.y):
 		var bi := Game.biome_index(maxi(r, 0))
-		var rock: Color = ROCK_COL[bi % ROCK_COL.size()]
-		var ore: Color = ORE_COL[bi % ORE_COL.size()]
-		if r >= 0 and r == int(Game.biome_start_rows[bi]) and bi > 0:
-			draw_rect(Rect2(0, r * TILE - 3, COLS * TILE, 6), Color(1, 1, 1, 0.5))
+		var rect := Rect2(x0, r * TILE, w, TILE)
+		var region := Rect2(rect.position.x * 0.5, rect.position.y * 0.5, rect.size.x * 0.5, rect.size.y * 0.5)
+		draw_texture_rect_region(_bgs[bi], rect, region)
+	# darken outside the shaft so the play area pops
+	var side := Color(0, 0, 0, 0.45)
+	draw_rect(Rect2(x0, rows.x * TILE, -x0, (rows.y - rows.x) * TILE), side)
+	draw_rect(Rect2(COLS * TILE, rows.x * TILE, w, (rows.y - rows.x) * TILE), side)
+	for r in range(rows.x, rows.y):
+		var bi := Game.biome_index(maxi(r, 0))
+		var atlas: Texture2D = _tiles[bi]
+		var rim: Color = ORE_COL[bi]
+		rim.a = 0.35
 		for c in range(COLS):
 			var t := cell(c, r)
 			var rect := Rect2(c * TILE, r * TILE, TILE, TILE)
-			if t == EMPTY or r < 0:
-				draw_rect(rect, rock.darkened(0.75))
+			if t == EMPTY:
+				draw_texture_rect_region(atlas, rect, Rect2(IDX_WALL * ATLAS, 0, ATLAS, ATLAS), Color(1, 1, 1, 0.85))
 				continue
-			var base := rock.darkened(0.25) if t == HARD else rock
-			draw_rect(rect.grow(-2), base)
-			draw_rect(Rect2(rect.position + Vector2(2, 2), Vector2(TILE - 4, 5)), base.lightened(0.25))
-			if t == HARD:
-				draw_rect(rect.grow(-14), base.darkened(0.3))
-			elif t == ORE:
-				draw_rect(rect.grow(-18), ore)
-			elif t == HAZARD:
-				draw_rect(rect.grow(-12), HAZARD_COL)
-	var p := _drill_pos
-	draw_rect(Rect2(p + Vector2(-20, -30), Vector2(40, 40)), Color("ff9f43"))
-	draw_rect(Rect2(p + Vector2(-12, -24), Vector2(24, 12)), Color("1b2c48"))
-	draw_colored_polygon(PackedVector2Array([p + Vector2(-18, 10), p + Vector2(18, 10), p + Vector2(0, 34)]), Color("d8e2ea"))
+			var idx := posmod(int(_rand01(c + 17, r) * 1000.0), 3)
+			match t:
+				HARD: idx = IDX_HARD
+				HAZARD: idx = IDX_HAZARD
+				ORE: idx = IDX_ORE
+			draw_texture_rect_region(atlas, rect, Rect2(idx * ATLAS, 0, ATLAS, ATLAS))
+			# glowing rim where rock meets the tunnel
+			if cell(c - 1, r) == EMPTY:
+				draw_line(rect.position + Vector2(2, 8), rect.position + Vector2(2, TILE - 8), rim, 3.0)
+			if cell(c + 1, r) == EMPTY:
+				draw_line(rect.position + Vector2(TILE - 2, 8), rect.position + Vector2(TILE - 2, TILE - 8), rim, 3.0)
+			if cell(c, r - 1) == EMPTY:
+				draw_line(rect.position + Vector2(8, 2), rect.position + Vector2(TILE - 8, 2), rim, 3.0)
+		# biome border banner painted into the rock
+		if r > 0 and r == int(Game.biome_start_rows[bi]):
+			var lc: Color = ORE_COL[bi]
+			draw_rect(Rect2(0, r * TILE - 3, COLS * TILE, 6), lc)
+			var name := String(Game.biomes[bi]["name"]).to_upper()
+			draw_string_outline(_font, Vector2(0, r * TILE - 12), name, HORIZONTAL_ALIGNMENT_CENTER, COLS * TILE, 34, 10, Color(0, 0, 0, 0.8))
+			draw_string(_font, Vector2(0, r * TILE - 12), name, HORIZONTAL_ALIGNMENT_CENTER, COLS * TILE, 34, lc)
+	# shaft frame
+	draw_line(Vector2(0, rows.x * TILE), Vector2(0, rows.y * TILE), Color(0, 0, 0, 0.6), 6.0)
+	draw_line(Vector2(COLS * TILE, rows.x * TILE), Vector2(COLS * TILE, rows.y * TILE), Color(0, 0, 0, 0.6), 6.0)
+	_draw_drill()
 	if blocked:
-		draw_string(_font, p + Vector2(-90, 70), "TOO HARD - UPGRADE DRILL", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color.RED)
+		var p := _drill_pos
+		draw_string_outline(_font, p + Vector2(-160, 80), "TOO HARD - UPGRADE DRILL", HORIZONTAL_ALIGNMENT_CENTER, 320, 24, 8, Color.BLACK)
+		draw_string(_font, p + Vector2(-160, 80), "TOO HARD - UPGRADE DRILL", HORIZONTAL_ALIGNMENT_CENTER, 320, 24, Color("ff5c5c"))
 	for pp in _popups:
 		var a := 1.0 - float(pp["t"]) / 0.9
 		var col_a: Color = pp["color"]
 		col_a.a = a
-		draw_string_outline(_font, pp["pos"], pp["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, 30, 6, Color(0, 0, 0, a))
-		draw_string(_font, pp["pos"], pp["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, 30, col_a)
+		var size := 34 if String(pp["text"]).length() > 8 else 30
+		draw_string_outline(_font, pp["pos"], pp["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, size, 8, Color(0.05, 0.03, 0.12, a))
+		draw_string(_font, pp["pos"], pp["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, size, col_a)
+
+
+func _draw_drill() -> void:
+	var next_col := col + signi(target_col - col)
+	var want_tilt := 0.0
+	if running:
+		want_tilt = -0.28 * signf(next_col - col)
+	_tilt = lerpf(_tilt, want_tilt, 0.2)
+	var bob := sin(_time * 18.0) * (1.5 if running else 0.6)
+	draw_set_transform(_drill_pos + Vector2(0, bob), _tilt, Vector2(0.5, 0.5))
+	# bit (frames 1-4), spinning while digging
+	var frame := 1 + (int(_time * 24.0) % 4 if running else 0)
+	draw_texture_rect_region(_drill_tex, Rect2(-48, 30, 96, 128), Rect2(frame * 96, 0, 96, 128))
+	# body (frame 0)
+	draw_texture_rect_region(_drill_tex, Rect2(-48, -84, 96, 128), Rect2(0, 0, 96, 128))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

@@ -14,8 +14,15 @@ func _ready() -> void:
 	enabled = not ("--autoplay" in OS.get_cmdline_user_args())
 	if not enabled:
 		return
-	if OS.has_feature("web") and str(JavaScriptBridge.eval("location.search")).contains("reset"):
+	var query := ""
+	if OS.has_feature("web"):
+		query = str(JavaScriptBridge.eval("location.search"))
+	if query.contains("reset"):
 		wipe()
+	var m := RegEx.create_from_string("biome=(\\d)").search(query)
+	if m:
+		_preview(int(m.get_string(1)))
+		return
 	load_game()
 	Game.levels_changed.connect(save_game)
 
@@ -85,6 +92,20 @@ func load_game() -> void:
 		Game.offline_seconds = maxf(Time.get_unix_time_from_system() - saved_at, 0.0)
 	Music.set_muted.call_deferred(bool(data.get("muted", false)))
 	print("SAVE loaded coins=%.0f deepest=%d" % [Game.coins, Game.deepest_biome])
+
+
+## ?biome=N preview: jump into biome N with fitting upgrades. Never touches the real save.
+func _preview(bi: int) -> void:
+	enabled = false
+	bi = clampi(bi, 0, Game.biomes.size() - 1)
+	Game.deepest_biome = bi
+	Game.best_row = int(Game.biome_start_rows[bi])
+	var hardness := float(Game.biomes[bi]["hardness"])
+	Game.levels["drill"] = maxi(int(ceil(log(hardness / 0.25) / log(1.1))), 0)
+	Game.levels["fuel"] = 10
+	Game.levels["magnet"] = mini(bi / 2, 4)
+	Game.coins = 1000.0 * pow(2.0, bi)
+	print("SAVE preview biome=%d drill=%d" % [bi, Game.levels["drill"]])
 
 
 func wipe() -> void:

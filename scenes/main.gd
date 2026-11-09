@@ -44,6 +44,10 @@ var _double_btn: Button
 var _popup: Control
 var _popup_text: Label
 var _popup_amount := 0.0
+var _planet: Control
+var _banner: Label
+var _flash: ColorRect
+var _count_tween: Tween
 
 
 func _ready() -> void:
@@ -58,6 +62,7 @@ func _ready() -> void:
 	shaft = preload("res://scenes/shaft.gd").new()
 	add_child(shaft)
 	shaft.run_ended.connect(_on_run_ended)
+	shaft.biome_entered.connect(_on_biome_entered)
 	_build_ui()
 	get_tree().root.size_changed.connect(_apply_layout)
 	_apply_layout()
@@ -77,6 +82,9 @@ func _apply_layout() -> void:
 	if _hub_box:
 		_hub_box.vertical = _portrait
 		_hub_box.move_child(_side, 0 if _portrait else 1)
+		_planet.custom_minimum_size = Vector2(200, 200) if _portrait else Vector2(180, 180)
+		for k in _cards:
+			_cards[k].custom_minimum_size = Vector2(560, 64 if _portrait else 72)
 
 
 # ---------------- flow ----------------
@@ -124,6 +132,19 @@ func _on_run_ended(earned: float, end_row: int, breakthrough: bool) -> void:
 	_refuel_btn.visible = not breakthrough and not shaft.refueled
 	_result.visible = true
 	_result_ready = true
+	_count_up(_result_text, earned)
+
+
+func _on_biome_entered(bi: int) -> void:
+	var b: Dictionary = Game.biomes[bi]
+	_banner.text = String(b["name"]).to_upper()
+	_banner.add_theme_color_override("font_color", Shaft.ORE_COL[bi])
+	var tw := create_tween()
+	tw.tween_property(_banner, "modulate:a", 1.0, 0.15)
+	tw.tween_interval(1.4)
+	tw.tween_property(_banner, "modulate:a", 0.0, 0.5)
+	_flash.color = Color(1, 1, 1, 0.55)
+	create_tween().tween_property(_flash, "color:a", 0.0, 0.45)
 
 
 func _collect(mult: float) -> void:
@@ -135,6 +156,19 @@ func _collect(mult: float) -> void:
 	print("COLLECT %.1f x%.1f total=%.1f" % [_last_earned, mult, Game.coins])
 	Save.save_game()
 	_show_hub()
+
+
+## Animate the "+N coins" line counting up from 0.
+func _count_up(label: Label, amount: float) -> void:
+	if autoplay != "":
+		return
+	var full := label.text
+	var first := full.get_slice("\n", 0)
+	var rest := full.substr(first.length())
+	if _count_tween:
+		_count_tween.kill()
+	_count_tween = create_tween()
+	_count_tween.tween_method(func(v: float): label.text = "+%s coins%s" % [Game.fmt(v), rest], 0.0, amount, 0.6).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
 
 
 func _double() -> void:
@@ -324,11 +358,14 @@ func _build_ui() -> void:
 
 	_side = VBoxContainer.new()
 	_side.alignment = BoxContainer.ALIGNMENT_CENTER
-	_side.add_theme_constant_override("separation", 10)
+	_side.add_theme_constant_override("separation", 8)
 	_side.custom_minimum_size = Vector2(560, 0)
 	_side.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_hub_box.add_child(_side)
 	_label(_side, "DIG TO THE OTHER SIDE", "Title")
+	_planet = preload("res://scenes/planet_map.gd").new()
+	_planet.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_side.add_child(_planet)
 	_hub_record = _label(_side, "", "Small")
 	_hub_coins = _label(_side, "", "Big")
 	_hub_coins.add_theme_color_override("font_color", UiTheme.GOLD)
@@ -338,6 +375,9 @@ func _build_ui() -> void:
 	_overclock_btn = _button(_side, "", _overclock, "Ad")
 	_reforge_btn = _button(_side, "", _reforge, "Special")
 	_sound_btn = _button(_side, "", _toggle_sound)
+	_sound_btn.custom_minimum_size = Vector2(0, 48)
+	_overclock_btn.custom_minimum_size = Vector2(0, 56)
+	_reforge_btn.custom_minimum_size = Vector2(0, 56)
 
 	# --- HUD ---
 	_hud = _full_rect(_root)
@@ -356,6 +396,17 @@ func _build_ui() -> void:
 	_hud_boost = _label(_hud, "", "Small")
 	_hud_boost.position = Vector2(24, 64)
 	_hud_boost.add_theme_color_override("font_color", UiTheme.CYAN)
+	_banner = _label(_hud, "", "Title")
+	_banner.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	_banner.offset_top = 120
+	_banner.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_banner.add_theme_font_size_override("font_size", 56)
+	_banner.modulate.a = 0.0
+	_flash = ColorRect.new()
+	_flash.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_flash.color = Color(1, 1, 1, 0)
+	_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_root.add_child(_flash)
 	_fuel_bar = ProgressBar.new()
 	_fuel_bar.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	_fuel_bar.offset_left = 24

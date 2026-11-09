@@ -51,6 +51,25 @@ with sync_playwright() as p:
         pg.wait_for_timeout(800)
         results[name + "_run_end"] = time.time() - t1 if any(n == name and "RUN_END" in t for n, _, t in lines) else None
         pg.close()
+    # one screenshot mid-run in every biome via the ?biome=N preview
+    for bi in range(8):
+        pg = b.new_page(viewport={"width": 1280, "height": 720} if bi % 2 == 0 else {"width": 390, "height": 844})
+        pg.on("console", lambda m, n=f"biome{bi}": lines.append((n, m.type, m.text)))
+        pg.on("pageerror", lambda e, n=f"biome{bi}": errors.append((n, str(e))))
+        pg.goto(f"http://127.0.0.1:8060/index.html?biome={bi}")
+        t0 = time.time()
+        while time.time() - t0 < 30 and not any(n == f"biome{bi}" and "BOOT_OK" in t for n, _, t in lines):
+            pg.wait_for_timeout(200)
+        pg.wait_for_timeout(800)
+        if bi == 0:
+            pg.screenshot(path=f"{out}/hub_preview.png")
+        pg.focus("canvas")
+        pg.keyboard.press("Enter")
+        pg.wait_for_timeout(3500)
+        pg.keyboard.press("ArrowLeft")
+        pg.wait_for_timeout(700)
+        pg.screenshot(path=f"{out}/biome_{bi}.png")
+        pg.close()
     b.close()
 srv.shutdown()
 
