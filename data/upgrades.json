@@ -1,9 +1,9 @@
 {
-  "_doc": "Cost of level n (0-based, buying level n+1) = base_cost * growth^n. Effect is multiplicative per level unless 'additive' is true.",
-  "fuel":   { "name": "Fuel Tank",   "effect": 1.12, "base_cost": 10,  "growth": 1.15, "max": 100, "desc": "+12% run length" },
-  "drill":  { "name": "Drill Bit",   "effect": 1.10, "base_cost": 15,  "growth": 1.17, "max": 100, "desc": "+10% dig speed" },
-  "ore":    { "name": "Coin Boost",  "effect": 1.08, "base_cost": 25,  "growth": 1.18, "max": 100, "desc": "+8% coins" },
-  "magnet": { "name": "Magnet",      "effect": 1,    "additive": true, "base_cost": 200, "growth": 1.6,  "max": 10,  "desc": "Pulls ore from 1 more tile" },
-  "shield": { "name": "Heat Shield", "effect": 0.90, "base_cost": 150, "growth": 1.4,  "max": 15,  "desc": "Hazards hurt 10% less" },
-  "miners": { "name": "Auto-Miners", "effect": 1,    "additive": true, "base_cost": 500, "growth": 1.25, "max": 50,  "desc": "+1 miner earning while away" }
+  "_doc": "Cost of level n (0-based, buying level n+1) = base_cost * growth^n. Multiplicative effects: effect^level. Additive effects: effect*level.",
+  "fuel":   { "name": "Fuel Tank",   "effect": 1.12, "base_cost": 10,  "growth": 1.22, "max": 16, "desc": "+12% run length" },
+  "drill":  { "name": "Drill Bit",   "effect": 1.10, "base_cost": 15,  "growth": 1.17, "max": 120, "desc": "+10% dig speed" },
+  "ore":    { "name": "Coin Boost",  "effect": 1.08, "base_cost": 25,  "growth": 1.18, "max": 120, "desc": "+8% coins" },
+  "magnet": { "name": "Magnet",      "effect": 1,    "additive": true, "base_cost": 120, "growth": 3.2, "max": 4, "desc": "Grab ore 1 block further" },
+  "shield": { "name": "Heat Shield", "effect": 0.85, "base_cost": 80,  "growth": 1.9, "max": 10, "desc": "Hazards cost 15% less fuel" },
+  "miners": { "name": "Auto-Miners", "effect": 1,    "additive": true, "base_cost": 300, "growth": 1.22, "max": 60, "desc": "+1 miner, earns while away" }
 }

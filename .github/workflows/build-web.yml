@@ -71,6 +71,13 @@ jobs:
           grep -q AUTOPLAY_OK autoplay.log
           ! grep -E "SCRIPT ERROR|Parse Error|Invalid call|Invalid access" autoplay.log import.log
 
+      - name: Bot plays the whole game to the breakthrough
+        run: |
+          timeout 900 ~/godot/godot --headless -- --autoplay=full 2>&1 | tee fullplay.log | grep -E "AUTOPLAY|RUN_END.*breakthrough=true|SCRIPT ERROR" || true
+          grep -q "AUTOPLAY_FULL broke_through=true" fullplay.log
+          grep "AUTOPLAY_FULL" fullplay.log >> "$GITHUB_STEP_SUMMARY"
+          ! grep -E "SCRIPT ERROR|Invalid call|Invalid access" fullplay.log
+
       - name: Export web build
         run: |
           mkdir -p build/web
@@ -104,7 +111,7 @@ jobs:
       - name: Publish report to ci-report branch
         if: always()
         run: |
-          mkdir -p report && cp export.log import.log test.log autoplay.log report/ 2>/dev/null || true
+          mkdir -p report && cp export.log import.log test.log autoplay.log fullplay.log report/ 2>/dev/null || true
           cd report
           git init -q -b ci-report
           git config user.name "ci" && git config user.email "ci@users.noreply.github.com"

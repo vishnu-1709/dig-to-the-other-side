@@ -5,20 +5,21 @@ extends Node2D
 
 signal run_ended(earned: float, end_row: int, breakthrough: bool)
 signal biome_entered(index: int)
+signal block_dug(pos: Vector2, kind: int, biome: int)
 
 const TILE := 64
 const COLS := 9
-const ORE_P := 0.12
-const HARD_P := 0.08
 const EMPTY := -1
 const ROCK := 0
 const ORE := 1
 const HARD := 2
+const HAZARD := 3
 
 const ROCK_COL := [Color("7a5534"), Color("a08a6a"), Color("6d6a5a"), Color("3c2f6e"),
 	Color("4a1f1a"), Color("6b2a10"), Color("2a3a5a"), Color("2f5a3a")]
 const ORE_COL := [Color("e08a3c"), Color("ffb52e"), Color("ffd700"), Color("7ff3ff"),
 	Color("b04cff"), Color("ff5a1f"), Color("c0e0ff"), Color("9dff6a")]
+const HAZARD_COL := Color("ff3b5c")
 
 var running := false
 var row := 0
@@ -30,6 +31,7 @@ var fuel_max := 1.0
 var earned := 0.0
 var start_row := 0
 var blocked := false
+var refueled := false
 
 var _seed := 0
 var _dug := {}
@@ -38,6 +40,8 @@ var _popups: Array = []
 var _shake := 0.0
 var _cam: Camera2D
 var _font: Font
+var _ore_p := 0.12
+var _hard_p := 0.08
 
 
 func _ready() -> void:
@@ -45,12 +49,15 @@ func _ready() -> void:
 	add_child(_cam)
 	_cam.make_current()
 	_font = ThemeDB.fallback_font
+	_ore_p = float(Game.config.get("ore_p", 0.12))
+	_hard_p = float(Game.config.get("hard_p", 0.08))
 	prepare()
 
 
 ## Place the drill at the checkpoint without starting (hub background).
 func prepare() -> void:
 	running = false
+	refueled = false
 	_seed = randi()
 	_dug.clear()
 	start_row = Game.checkpoint_row()
@@ -72,16 +79,33 @@ func start() -> void:
 	print("RUN_START row=%d fuel=%.1f power=%.2f" % [row, fuel_max, Game.dig_power()])
 
 
+## Continue the same run after a rewarded refuel.
+func resume(extra_fuel: float) -> void:
+	refueled = true
+	fuel = extra_fuel
+	fuel_max = maxf(fuel_max, extra_fuel)
+	running = true
+	print("RUN_RESUME +%.0fs" % extra_fuel)
+
+
+func biome_at(r: int) -> Dictionary:
+	return Game.biomes[Game.biome_index(maxi(r, 0))]
+
+
 func cell(c: int, r: int) -> int:
 	if c < 0 or c >= COLS:
 		return HARD
 	if r < start_row or _dug.has(Vector2i(c, r)):
 		return EMPTY
 	var v := _rand01(c, r)
-	if v < ORE_P:
+	if v < _ore_p:
 		return ORE
-	if v < ORE_P + HARD_P:
+	v -= _ore_p
+	if v < _hard_p:
 		return HARD
+	v -= _hard_p
+	if v < float(biome_at(r)["hazard_p"]):
+		return HAZARD
 	return ROCK
 
 
@@ -92,17 +116,24 @@ func _rand01(c: int, r: int) -> float:
 	return float(absi(x) % 100000) / 100000.0
 
 
-## Nearest ore in the next few rows that the drill can still reach (for the autoplay bot).
-func best_ore_col() -> int:
+## Steering choice for the autoplay bot: dodge hazards, head for reachable ore.
+func bot_target_col() -> int:
+	var best := col
 	for dr in range(1, 5):
-		var best := -1
+		var found := -1
 		for c in range(COLS):
 			if cell(c, row + dr) == ORE and absi(c - col) <= dr:
-				if best == -1 or absi(c - col) < absi(best - col):
-					best = c
-		if best != -1:
-			return best
-	return col
+				if found == -1 or absi(c - col) < absi(found - col):
+					found = c
+		if found != -1:
+			best = found
+			break
+	var next := col + signi(best - col)
+	if cell(next, row + 1) == HAZARD:
+		for alt in [col, col - 1, col + 1]:
+			if alt >= 0 and alt < COLS and cell(alt, row + 1) != HAZARD:
+				return alt
+	return best
 
 
 func _process(delta: float) -> void:
@@ -120,8 +151,9 @@ func _process(delta: float) -> void:
 
 
 func _step(delta: float) -> void:
-	fuel -= delta
+	fuel -= delta * float(biome_at(row + 1).get("fuel_drain", 1.0))
 	if fuel <= 0.0:
+		fuel = 0.0
 		_end(false)
 		return
 	var steps := 0
@@ -142,18 +174,12 @@ func _step(delta: float) -> void:
 		delta = 0.0
 		if progress < 1.0:
 			return
-		progress -= 1.0
-		delta = progress * hardness
+		delta = (progress - 1.0) * hardness
 		progress = 0.0
 		row = next_row
 		col = next_col
-		_dug[Vector2i(col, row)] = true
-		var value := float(b["ore_value"] if t == ORE else b["rock_value"]) * Game.ore_mult()
-		earned += value
-		if t == ORE:
-			Music.ore()
-			_popup(_cell_center(col, row) + Vector2(30, -20), "+" + Game.fmt(value), ORE_COL[bi % ORE_COL.size()])
-			_shake = maxf(_shake, 4.0)
+		_dig_cell(col, row, t, bi, b)
+		_magnet(bi, b)
 		if row > Game.best_row:
 			Game.best_row = row
 		if bi > Game.deepest_biome:
@@ -163,13 +189,46 @@ func _step(delta: float) -> void:
 			_shake = 10.0
 			Music.set_biome(bi)
 			biome_entered.emit(bi)
+		if fuel <= 0.0:
+			fuel = 0.0
+			_end(false)
+			return
 		steps += 1
 		if delta <= 0.0:
 			return
 
 
+func _dig_cell(c: int, r: int, t: int, bi: int, b: Dictionary) -> void:
+	_dug[Vector2i(c, r)] = true
+	var pos := _cell_center(c, r)
+	if t == HAZARD:
+		var cost := Game.hazard_fuel_cost()
+		fuel -= cost
+		_popup(pos + Vector2(26, -10), "-%.1fs FUEL" % cost, HAZARD_COL)
+		_shake = maxf(_shake, 12.0)
+		Music.sfx("fuel_out", -12.0, 1.8)
+	else:
+		var value := float(b["ore_value"] if t == ORE else b["rock_value"]) * Game.coin_mult()
+		earned += value
+		if t == ORE:
+			Music.ore()
+			_popup(pos + Vector2(30, -20), "+" + Game.fmt(value), ORE_COL[bi % ORE_COL.size()])
+			_shake = maxf(_shake, 4.0)
+	block_dug.emit(pos, t, bi)
+
+
+func _magnet(bi: int, b: Dictionary) -> void:
+	var radius := Game.magnet_radius()
+	for d in range(1, radius + 1):
+		for c in [col - d, col + d]:
+			if c >= 0 and c < COLS and cell(c, row) == ORE:
+				_dig_cell(c, row, ORE, bi, b)
+
+
 func _end(breakthrough: bool) -> void:
 	running = false
+	if breakthrough:
+		Game.broke_through = true
 	print("RUN_END earned=%.1f row=%d rows_dug=%d breakthrough=%s" % [earned, row, row - start_row, breakthrough])
 	run_ended.emit(earned, row, breakthrough)
 
@@ -216,7 +275,6 @@ func _draw() -> void:
 	var top := int(floor((_cam.position.y - vis.y * 0.5) / TILE)) - 1
 	var bottom := int(ceil((_cam.position.y + vis.y * 0.5) / TILE)) + 1
 	var left := -int(ceil((vis.x * 0.5 - COLS * TILE * 0.5) / TILE)) - 1
-	# side walls (outside the shaft) drawn dark
 	draw_rect(Rect2(left * TILE, top * TILE, -left * TILE, (bottom - top) * TILE), Color("0b0820"))
 	draw_rect(Rect2(COLS * TILE, top * TILE, -left * TILE, (bottom - top) * TILE), Color("0b0820"))
 	for r in range(top, bottom):
@@ -238,7 +296,8 @@ func _draw() -> void:
 				draw_rect(rect.grow(-14), base.darkened(0.3))
 			elif t == ORE:
 				draw_rect(rect.grow(-18), ore)
-	# drill
+			elif t == HAZARD:
+				draw_rect(rect.grow(-12), HAZARD_COL)
 	var p := _drill_pos
 	draw_rect(Rect2(p + Vector2(-20, -30), Vector2(40, 40)), Color("ff9f43"))
 	draw_rect(Rect2(p + Vector2(-12, -24), Vector2(24, 12)), Color("1b2c48"))
