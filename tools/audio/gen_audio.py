@@ -140,6 +140,13 @@ def coin():
     y = np.where(x < 0.06, np.sin(2*np.pi*988*x), np.sin(2*np.pi*1319*x))
     return y * np.exp(-x*12)
 
+def magnet():
+    x = t(0.2)
+    f = 500 + 1400 * (x / 0.2) ** 1.5
+    tone = np.sin(2*np.pi*np.cumsum(f)/SR)
+    shimmer = np.sin(2*np.pi*np.cumsum(f*2.01)/SR) * 0.3
+    return (tone + shimmer) * np.minimum(1, x/0.01) * np.exp(-x*9)
+
 def upgrade():
     x = t(0.45)
     notes = [523.25, 659.25, 783.99]
@@ -155,7 +162,7 @@ if __name__ == "__main__":
                      ("inst_4", low_synth), ("inst_5", drone_pulse), ("inst_6", ethereal), ("inst_7", alien_fm),
                      ("kick", kick), ("snare", snare), ("hat", hat), ("bass", bass), ("pad", pad),
                      ("click", click), ("fuel_out", fuel_out), ("biome_enter", biome_enter),
-                     ("coin", coin), ("upgrade", upgrade)]:
+                     ("coin", coin), ("upgrade", upgrade), ("magnet", magnet)]:
         save(name, fn())
     total = sum(os.path.getsize(os.path.join(OUT, f)) for f in os.listdir(OUT) if f.endswith(".ogg"))
     print(f"TOTAL {total/1024:.1f} KB")

@@ -7,6 +7,7 @@ extends Node2D
 signal run_ended(earned: float, end_row: int, breakthrough: bool)
 signal biome_entered(index: int)
 signal block_dug(pos: Vector2, kind: int, biome: int)
+signal ore_pulled(from: Vector2, biome: int)
 
 const TILE := 64
 const COLS := 9
@@ -67,6 +68,7 @@ func _ready() -> void:
 	_fx.shaft = self
 	add_child(_fx)
 	block_dug.connect(_fx.on_block_dug)
+	ore_pulled.connect(_fx.on_ore_pulled)
 	_ore_p = float(Game.config.get("ore_p", 0.12))
 	_hard_p = float(Game.config.get("hard_p", 0.08))
 	prepare()
@@ -216,7 +218,7 @@ func _step(delta: float) -> void:
 			return
 
 
-func _dig_cell(c: int, r: int, t: int, bi: int, b: Dictionary) -> void:
+func _dig_cell(c: int, r: int, t: int, bi: int, b: Dictionary, pulled := false) -> void:
 	_dug[Vector2i(c, r)] = true
 	var pos := _cell_center(c, r)
 	if t == HAZARD:
@@ -230,9 +232,14 @@ func _dig_cell(c: int, r: int, t: int, bi: int, b: Dictionary) -> void:
 		earned += value
 		if t == ORE:
 			Music.ore()
-			_popup(pos + Vector2(30, -20), "+" + Game.fmt(value), ORE_COL[bi % ORE_COL.size()])
+			var at := _drill_pos + Vector2(30, -40) if pulled else pos + Vector2(30, -20)
+			_popup(at, "+" + Game.fmt(value), ORE_COL[bi % ORE_COL.size()])
 			_shake = maxf(_shake, 4.0)
-	block_dug.emit(pos, t, bi)
+	if pulled:
+		Music.sfx("magnet", -10.0)
+		ore_pulled.emit(pos, bi)
+	else:
+		block_dug.emit(pos, t, bi)
 
 
 func _magnet(bi: int, b: Dictionary) -> void:
@@ -240,7 +247,7 @@ func _magnet(bi: int, b: Dictionary) -> void:
 	for d in range(1, radius + 1):
 		for c in [col - d, col + d]:
 			if c >= 0 and c < COLS and cell(c, row) == ORE:
-				_dig_cell(c, row, ORE, bi, b)
+				_dig_cell(c, row, ORE, bi, b, true)
 
 
 func _end(breakthrough: bool) -> void:
@@ -293,6 +300,10 @@ const IDX_HARD := 3
 const IDX_HAZARD := 4
 const IDX_ORE := 5
 const IDX_WALL := 6
+
+
+func tile_atlas(bi: int) -> Texture2D:
+	return _tiles[bi]
 
 
 func drill_pos() -> Vector2:

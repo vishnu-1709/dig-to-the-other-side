@@ -40,7 +40,7 @@ func _ready() -> void:
 	_enabled = DisplayServer.get_name() != "headless"
 	if not _enabled:
 		return
-	for n in ["kick", "snare", "hat", "bass", "pad", "click", "fuel_out", "biome_enter", "coin", "upgrade"]:
+	for n in ["kick", "snare", "hat", "bass", "pad", "click", "fuel_out", "biome_enter", "coin", "upgrade", "magnet"]:
 		_s[n] = load("res://assets/audio/%s.ogg" % n)
 	for i in range(8):
 		_inst.append(load("res://assets/audio/inst_%d.ogg" % i))

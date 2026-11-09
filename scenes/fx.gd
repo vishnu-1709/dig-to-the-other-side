@@ -13,6 +13,9 @@ var _next := 0
 var _sparks: CPUParticles2D
 var _glow_layer: Node2D
 var _low_end := false
+var _flyers: Array = []  # ore pulled by the magnet: {from, t, bi}
+
+const FLY_TIME := 0.28
 
 
 func _ready() -> void:
@@ -83,13 +86,65 @@ func on_block_dug(pos: Vector2, kind: int, biome: int) -> void:
 	p.restart()
 
 
-func _process(_delta: float) -> void:
+func on_ore_pulled(from: Vector2, biome: int) -> void:
+	_flyers.append({"from": from, "t": 0.0, "bi": biome})
+
+
+func _flyer_pos(f: Dictionary) -> Vector2:
+	var t: float = f["t"]
+	var e := t * t * (3.0 - 2.0 * t)  # smoothstep
+	var target: Vector2 = shaft.drill_pos()
+	var mid := (f["from"] as Vector2).lerp(target, 0.5) + Vector2(0, -40)  # small arc
+	return (f["from"] as Vector2).lerp(mid, e).lerp(mid.lerp(target, e), e)
+
+
+func _process(delta: float) -> void:
+	for f in _flyers:
+		f["t"] = minf(float(f["t"]) + delta / FLY_TIME, 1.0)
+		if f["t"] >= 1.0:
+			var p: CPUParticles2D = _debris[_next]
+			_next = (_next + 1) % POOL
+			p.position = shaft.drill_pos()
+			p.color = Shaft.ORE_COL[f["bi"]]
+			p.restart()
+	_flyers = _flyers.filter(func(f): return f["t"] < 1.0)
+	queue_redraw()
 	_sparks.position = shaft.drill_pos() + Vector2(0, 38)
 	_sparks.emitting = shaft.running
 	_glow_layer.queue_redraw()
 
 
+func _draw() -> void:
+	# flying ore sprites (normal blend)
+	for f in _flyers:
+		var p := _flyer_pos(f)
+		var s := lerpf(40.0, 22.0, float(f["t"]))
+		draw_texture_rect_region(shaft.tile_atlas(f["bi"]), Rect2(p - Vector2(s, s) * 0.5, Vector2(s, s)), Rect2(5 * 96 + 12, 12, 72, 72))
+
+
 func _draw_glow() -> void:
+	# magnet pull radius around the drill
+	var radius := Game.magnet_radius()
+	if radius > 0 and shaft.running:
+		var dp0: Vector2 = shaft.drill_pos()
+		var bi0: int = Game.biome_index(shaft.row)
+		var mc: Color = Shaft.ORE_COL[bi0]
+		var w := (radius + 0.5) * 64.0
+		var pul := 0.5 + 0.5 * sin(Time.get_ticks_msec() / 160.0)
+		mc.a = 0.06 + 0.04 * pul
+		_glow_layer.draw_rect(Rect2(dp0.x - w, dp0.y - 26, w * 2.0, 52), mc)
+		mc.a = 0.35 + 0.25 * pul
+		_glow_layer.draw_rect(Rect2(dp0.x - w - 2, dp0.y - 26, 4, 52), mc)
+		_glow_layer.draw_rect(Rect2(dp0.x + w - 2, dp0.y - 26, 4, 52), mc)
+	# trails behind flying ore
+	for f in _flyers:
+		var fc: Color = Shaft.ORE_COL[f["bi"]]
+		for k in range(4):
+			var g := f.duplicate()
+			g["t"] = maxf(float(f["t"]) - k * 0.08, 0.0)
+			fc.a = 0.45 - k * 0.1
+			var gp := _flyer_pos(g)
+			_glow_layer.draw_texture_rect(_glow_tex, Rect2(gp - Vector2(28, 28), Vector2(56, 56)), false, fc)
 	var t: float = Time.get_ticks_msec() / 1000.0
 	var rows: Vector2i = shaft.view_rows()
 	var pulse := 0.75 + 0.25 * sin(t * 3.0)
