@@ -18,6 +18,7 @@ var _hub: Control
 var _hub_coins: Label
 var _hub_record: Label
 var _buy_buttons := {}
+var _sound_btn: Button
 var _hud: Control
 var _hud_depth: Label
 var _hud_coins: Label
@@ -31,6 +32,9 @@ func _ready() -> void:
 	autoplay = "--autoplay" in OS.get_cmdline_user_args()
 	if autoplay:
 		Engine.time_scale = 8.0
+	if OS.has_feature("web"):
+		# iOS: play sound even when the silent switch is on (Safari 16.4+)
+		JavaScriptBridge.eval("if (navigator.audioSession) { navigator.audioSession.type = 'playback'; }")
 	get_tree().root.size_changed.connect(_apply_layout)
 	_apply_layout()
 	shaft = preload("res://scenes/shaft.gd").new()
@@ -191,6 +195,8 @@ func _build_ui() -> void:
 	for key in Game.UPGRADE_KEYS:
 		var b := _button(hv, "", _buy.bind(key))
 		_buy_buttons[key] = b
+	_sound_btn = _button(hv, "", _toggle_sound)
+	_update_sound_btn()
 	var dig := _button(hv, "DIG!", _start_run)
 	dig.custom_minimum_size = Vector2(0, 90)
 	dig.add_theme_font_size_override("font_size", 44)
@@ -235,7 +241,18 @@ func _build_ui() -> void:
 	dbl.add_theme_color_override("font_color", Color("7ff3ff"))
 
 
+func _toggle_sound() -> void:
+	Music.set_muted(not Music.muted)
+	_update_sound_btn()
+	Save.save_game()
+
+
+func _update_sound_btn() -> void:
+	_sound_btn.text = "Sound: ON" if not Music.muted else "Sound: OFF"
+
+
 func _refresh_hub() -> void:
+	_update_sound_btn()
 	_hub_coins.text = "Coins: %s" % Game.fmt(Game.coins)
 	var b: Dictionary = Game.biomes[Game.deepest_biome]
 	_hub_record.text = "Deepest: %s  -  record %s km" % [b["name"], Game.fmt(Game.depth_km(Game.best_row))]

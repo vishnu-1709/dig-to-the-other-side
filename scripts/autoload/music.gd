@@ -20,6 +20,7 @@ const PROGRESSION := [0, 5, 3, 4]      # I - vi - IV - V (scale degrees)
 const MELODY := [0, 2, 4, 7, 4, 2, 7, 9]
 
 var running := false
+var muted := false
 var biome := 0
 var heat := 0.0
 
@@ -48,7 +49,12 @@ func _ready() -> void:
 		add_child(p)
 		_pool.append(p)
 	Portal.ad_started.connect(func(): AudioServer.set_bus_mute(0, true))
-	Portal.ad_finished.connect(func(): AudioServer.set_bus_mute(0, false))
+	Portal.ad_finished.connect(func(): AudioServer.set_bus_mute(0, muted))
+
+
+func set_muted(m: bool) -> void:
+	muted = m
+	AudioServer.set_bus_mute(0, m)
 
 
 # ---------------- game hooks ----------------

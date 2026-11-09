@@ -43,6 +43,7 @@ func save_game() -> void:
 		"levels": Game.levels,
 		"deepest_biome": Game.deepest_biome,
 		"best_row": Game.best_row,
+		"muted": Music.muted,
 		"saved_at": Time.get_unix_time_from_system(),
 	}
 	var f := FileAccess.open(PATH, FileAccess.WRITE)
@@ -69,6 +70,7 @@ func load_game() -> void:
 		Game.levels[k] = int(lv.get(k, 0))
 	Game.deepest_biome = clampi(int(data.get("deepest_biome", 0)), 0, Game.biomes.size() - 1)
 	Game.best_row = int(data.get("best_row", 0))
+	Music.set_muted.call_deferred(bool(data.get("muted", false)))
 	print("SAVE loaded coins=%.0f deepest=%d" % [Game.coins, Game.deepest_biome])
 
 
