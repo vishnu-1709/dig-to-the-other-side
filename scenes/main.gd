@@ -61,6 +61,8 @@ func _ready() -> void:
 			autoplay = "full" if a == "--autoplay=full" else "quick"
 	if autoplay != "":
 		Engine.time_scale = 40.0 if autoplay == "full" else 8.0
+	elif OS.has_feature("web") and str(JavaScriptBridge.eval("location.search")).contains("demo"):
+		autoplay = "demo"  # bot steers at normal speed, used to record store preview videos
 	if OS.has_feature("web"):
 		# iOS: play sound even when the silent switch is on (Safari 16.4+)
 		JavaScriptBridge.eval("if (navigator.audioSession) { navigator.audioSession.type = 'playback'; }")
@@ -364,6 +366,9 @@ func _autoplay_tick() -> void:
 						k = key
 				if k == "" or not Game.buy(k):
 					break
+			if autoplay == "demo":
+				_start_run()
+				return
 			if autoplay == "quick" and _autoplay_runs >= AUTOPLAY_RUNS:
 				_finish_autoplay()
 				return

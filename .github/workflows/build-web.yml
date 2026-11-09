@@ -117,6 +117,16 @@ jobs:
           python3 -m playwright install --with-deps chromium >/dev/null
           python3 tests/smoke_test.py build/web report
 
+      - name: Record store preview videos (commits tagged [video])
+        if: contains(github.event.head_commit.message, '[video]')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          which ffmpeg || sudo apt-get install -y -qq ffmpeg >/dev/null
+          python3 tests/record_preview.py build/web videos
+          cp videos/preview_*.mp4 report/
+          gh release upload latest videos/preview_landscape.mp4 videos/preview_portrait.mp4 --clobber
+
       - name: Publish report to ci-report branch
         if: always()
         run: |
