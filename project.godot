@@ -1,0 +1,21 @@
+; Engine configuration file.
+; Godot fills in config/features and other defaults on first open.
+
+config_version=5
+
+[application]
+
+config/name="Dig to the Other Side"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true

@@ -1,0 +1,158 @@
+{
+  "config": {
+    "base_fuel_s": 15,
+    "run_overhead_s": 6,
+    "seconds_per_purchase": 0.8,
+    "target_total_min": [
+      30,
+      45
+    ],
+    "_doc": "rows = block rows to dig through the biome; hardness = seconds per row at drill level 0; runs restart at the start of the deepest biome reached (elevator)."
+  },
+  "biomes": [
+    {
+      "id": "topsoil",
+      "name": "Topsoil",
+      "start_km": 0,
+      "end_km": 30,
+      "rows": 80,
+      "hardness": 0.25,
+      "ore_value": 1.0,
+      "rock_value": 0.15,
+      "ore_density": 0.35,
+      "min_drill": 0,
+      "ore": "Copper",
+      "key": "C major",
+      "target_min": [
+        1,
+        4
+      ]
+    },
+    {
+      "id": "fossil",
+      "name": "Fossil Beds",
+      "start_km": 30,
+      "end_km": 300,
+      "rows": 100,
+      "hardness": 0.55,
+      "ore_value": 2.0,
+      "rock_value": 0.3,
+      "ore_density": 0.35,
+      "min_drill": 0,
+      "ore": "Amber",
+      "key": "G major",
+      "target_min": [
+        2,
+        5
+      ]
+    },
+    {
+      "id": "ruins",
+      "name": "Lost Ruins",
+      "start_km": 300,
+      "end_km": 900,
+      "rows": 120,
+      "hardness": 1.21,
+      "ore_value": 4.0,
+      "rock_value": 0.6,
+      "ore_density": 0.35,
+      "min_drill": 0,
+      "ore": "Gold Relic",
+      "key": "D dorian",
+      "target_min": [
+        3,
+        6
+      ]
+    },
+    {
+      "id": "crystal",
+      "name": "Crystal Caves",
+      "start_km": 900,
+      "end_km": 2000,
+      "rows": 140,
+      "hardness": 2.662,
+      "ore_value": 8.0,
+      "rock_value": 1.2,
+      "ore_density": 0.35,
+      "min_drill": 0,
+      "ore": "Crystal",
+      "key": "E minor",
+      "target_min": [
+        3,
+        6
+      ]
+    },
+    {
+      "id": "magma",
+      "name": "Magma Rivers",
+      "start_km": 2000,
+      "end_km": 3500,
+      "rows": 160,
+      "hardness": 5.8564,
+      "ore_value": 16.0,
+      "rock_value": 2.4,
+      "ore_density": 0.35,
+      "min_drill": 0,
+      "ore": "Obsidian",
+      "key": "A phrygian",
+      "target_min": [
+        4,
+        8
+      ]
+    },
+    {
+      "id": "core",
+      "name": "The Core",
+      "start_km": 3500,
+      "end_km": 6371,
+      "rows": 180,
+      "hardness": 12.8841,
+      "ore_value": 32.0,
+      "rock_value": 4.8,
+      "ore_density": 0.35,
+      "min_drill": 0,
+      "ore": "Core Shard",
+      "key": "drone",
+      "target_min": [
+        4,
+        8
+      ]
+    },
+    {
+      "id": "mirror",
+      "name": "Mirror Mantle",
+      "start_km": 6371,
+      "end_km": 10000,
+      "rows": 200,
+      "hardness": 28.345,
+      "ore_value": 64.0,
+      "rock_value": 9.6,
+      "ore_density": 0.35,
+      "min_drill": 0,
+      "ore": "Void Glass",
+      "key": "F lydian",
+      "target_min": [
+        5,
+        9
+      ]
+    },
+    {
+      "id": "alien",
+      "name": "Alien Crust",
+      "start_km": 10000,
+      "end_km": 12742,
+      "rows": 220,
+      "hardness": 62.3589,
+      "ore_value": 128.0,
+      "rock_value": 19.2,
+      "ore_density": 0.35,
+      "min_drill": 0,
+      "ore": "Star Metal",
+      "key": "whole-tone",
+      "target_min": [
+        5,
+        10
+      ]
+    }
+  ]
+}
