@@ -30,6 +30,10 @@ Full design: see the "Dig to the Other Side — Build Plan" doc. This file is th
 | `scripts/autoload/save.gd` | Local storage save every 10 s + on exit/hide; versioned format with migration |
 | `scripts/autoload/music.gd` | Beat clock, stem layering by combo, note quantizing, key per biome |
 | `scripts/autoload/portal.gd` | One API: `rewarded(reason) -> bool`, `midgame()`, `gameplay_start/stop()`, `banner(show)`. Backends: crazygames, poki, fake (dev) |
+| `scenes/fx.gd` | Additive glow (ores, hazards, headlight) + particle pools; cosmetic only |
+| `scenes/planet_map.gd` | Hub planet cross-section with the record-depth tunnel |
+| `scripts/ui_theme.gd` | `UiTheme.build()` — font, panels, button/label variations |
+| `tools/art/gen_tiles.py`, `tools/audio/gen_audio.py` | Regenerate all art / audio from code |
 | `data/*.json` | ALL tuning numbers. Never hard-code costs, values, hardness, cooldowns in scripts |
 | `tools/balance_sim.py` | Pacing simulator; must exit 0 before any economy change is committed |
 | `tests/` | Headless-browser smoke test (load time, FPS, console errors, size) |
@@ -38,9 +42,16 @@ Full design: see the "Dig to the Other Side — Build Plan" doc. This file is th
 - Run: hold to drill down, drag/keys to steer. Fuel runs out -> auto-return to surface, bank coins, shop.
 - Runs start at the top of the deepest biome reached (elevator), not at the surface.
 - Upgrade cost = base_cost * growth^level (data/upgrades.json). Effects multiply per level.
-- Biomes in data/biomes.json; pacing target 30–45 min to the far side (currently 40 min / 16 runs).
+- Biomes in data/biomes.json; pacing target 30–45 min to the far side (sim 42 min / 37 runs; bot 32 min / 33 runs).
+- Fuel Tank capped at 16 levels so runs stay ~1 min (natural ad breaks).
+- Hazard blocks cost fuel (Heat Shield reduces); Magnet grabs ore in the same row; Core drains fuel 1.5x.
 - Offline earnings from auto-miners, capped at 4 h; rewarded ad claims x3.
 - Prestige ("Reforge") after the breakthrough: reset for Core Shards, +5% coins each, permanent.
+
+## Testing shortcuts
+- `?reset` wipes the save. `?biome=N` (0-7) previews biome N with fitting upgrades and never saves.
+- CI runs: unit test, 8-run bot, full-game bot to the breakthrough (~32 game-min), web export,
+  size check, browser smoke test with screenshots pushed to the `ci-report` branch.
 
 ## Ads
 - Rewarded: offline x3, end-of-run double, +10 s fuel near rare ore (1/run), 3-min overclock.
