@@ -72,7 +72,7 @@ static func _button_styles(t: Theme, type: String, base: Color, text: Color) -> 
 	pressed.border_width_bottom = 2
 	pressed.content_margin_top = 18
 	var disabled := normal.duplicate()
-	disabled.bg_color = base.darkened(0.35)
+	disabled.bg_color = base.darkened(0.2)
 	t.set_stylebox("normal", type, normal)
 	t.set_stylebox("hover", type, hover)
 	t.set_stylebox("pressed", type, pressed)

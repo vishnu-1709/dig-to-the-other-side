@@ -336,6 +336,11 @@ func _build_ui() -> void:
 
 	# --- hub: shop column + side column (side on top in portrait) ---
 	_hub = _full_rect(_root)
+	var dim := ColorRect.new()
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0.03, 0.02, 0.08, 0.72)
+	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hub.add_child(dim)
 	var margin := MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -509,7 +514,8 @@ func _update_card(key: String) -> void:
 	var maxed := Game.is_maxed(key)
 	(b.get_meta("cost") as Label).text = "MAX" if maxed else Game.fmt(Game.cost(key))
 	b.disabled = maxed or not Game.can_buy(key)
-	b.modulate.a = 0.55 if b.disabled else 1.0
+	b.modulate = Color(0.75, 0.75, 0.82) if b.disabled else Color.WHITE
+	(b.get_meta("cost") as Label).add_theme_color_override("font_color", UiTheme.GOLD if not b.disabled or maxed else Color("ff8a8a"))
 
 
 func _full_rect(parent: Control) -> Control:
