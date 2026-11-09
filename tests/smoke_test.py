@@ -32,9 +32,24 @@ with sync_playwright() as p:
                 boot = time.time() - t0
                 break
             pg.wait_for_timeout(200)
-        pg.wait_for_timeout(5000)
-        pg.screenshot(path=f"{out}/{name}.png")
         results[name] = boot
+        pg.wait_for_timeout(1500)
+        pg.screenshot(path=f"{out}/{name}_1_hub.png")
+        pg.focus("canvas")
+        pg.keyboard.press("Enter")
+        pg.wait_for_timeout(5000)
+        for k in ["ArrowLeft", "ArrowLeft", "ArrowRight"]:
+            pg.keyboard.press(k)
+            pg.wait_for_timeout(400)
+        pg.screenshot(path=f"{out}/{name}_2_run.png")
+        t1 = time.time()
+        while time.time() - t1 < 45 and not any(n == name and "RUN_END" in t for n, _, t in lines):
+            pg.wait_for_timeout(300)
+        pg.wait_for_timeout(1500)
+        pg.screenshot(path=f"{out}/{name}_3_result.png")
+        pg.keyboard.press("Enter")
+        pg.wait_for_timeout(800)
+        results[name + "_run_end"] = time.time() - t1 if any(n == name and "RUN_END" in t for n, _, t in lines) else None
         pg.close()
     b.close()
 srv.shutdown()

@@ -57,10 +57,23 @@ jobs:
           mv templates/* ~/.local/share/godot/export_templates/${{ steps.godot.outputs.dir }}/
           rm -rf templates *.zip *.tpz
 
-      - name: Import + export web build
+      - name: Import project
+        run: ~/godot/godot --headless --import 2>&1 | tee import.log || true
+
+      - name: Unit tests
+        run: |
+          ~/godot/godot --headless --script res://tests/test_game.gd 2>&1 | tee test.log
+          grep -q TEST_OK test.log
+
+      - name: Bot playthrough (headless, 8 runs)
+        run: |
+          timeout 300 ~/godot/godot --headless -- --autoplay 2>&1 | tee autoplay.log
+          grep -q AUTOPLAY_OK autoplay.log
+          ! grep -E "SCRIPT ERROR|Parse Error|Invalid call|Invalid access" autoplay.log import.log
+
+      - name: Export web build
         run: |
           mkdir -p build/web
-          ~/godot/godot --headless --import || true
           ~/godot/godot --headless --export-release "Web" build/web/index.html 2>&1 | tee export.log
           test -f build/web/index.wasm || (echo "EXPORT FAILED" && exit 1)
           ls -la build/web
@@ -91,7 +104,7 @@ jobs:
       - name: Publish report to ci-report branch
         if: always()
         run: |
-          mkdir -p report && cp export.log report/ 2>/dev/null || true
+          mkdir -p report && cp export.log import.log test.log autoplay.log report/ 2>/dev/null || true
           cd report
           git init -q -b ci-report
           git config user.name "ci" && git config user.email "ci@users.noreply.github.com"
