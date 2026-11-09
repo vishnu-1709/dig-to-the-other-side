@@ -140,7 +140,7 @@ func _draw_glow() -> void:
 	for f in _flyers:
 		var fc: Color = Shaft.ORE_COL[f["bi"]]
 		for k in range(4):
-			var g := f.duplicate()
+			var g: Dictionary = (f as Dictionary).duplicate()
 			g["t"] = maxf(float(f["t"]) - k * 0.08, 0.0)
 			fc.a = 0.45 - k * 0.1
 			var gp := _flyer_pos(g)
