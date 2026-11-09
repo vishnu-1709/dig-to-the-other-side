@@ -1,0 +1,102 @@
+name: Build web + publish
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Balance check
+        run: python3 tools/balance_sim.py
+
+      - name: Find latest stable Godot
+        id: godot
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG=$(gh release view --repo godotengine/godot --json tagName -q .tagName)
+          echo "Using Godot $TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "dir=${TAG/-/.}" >> "$GITHUB_OUTPUT"   # 4.5.1-stable -> 4.5.1.stable
+
+      - name: Cache Godot
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/godot
+            ~/.local/share/godot/export_templates
+          key: godot-${{ steps.godot.outputs.tag }}
+
+      - name: Install Godot + export templates
+        if: steps.cache.outputs.cache-hit != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG=${{ steps.godot.outputs.tag }}
+          mkdir -p ~/godot && cd ~/godot
+          gh release download "$TAG" --repo godotengine/godot -p "Godot_v${TAG}_linux.x86_64.zip" -p "Godot_v${TAG}_export_templates.tpz"
+          unzip -q "Godot_v${TAG}_linux.x86_64.zip"
+          mv "Godot_v${TAG}_linux.x86_64" godot && chmod +x godot
+          mkdir -p ~/.local/share/godot/export_templates/${{ steps.godot.outputs.dir }}
+          unzip -q "Godot_v${TAG}_export_templates.tpz"
+          mv templates/* ~/.local/share/godot/export_templates/${{ steps.godot.outputs.dir }}/
+          rm -rf templates *.zip *.tpz
+
+      - name: Import + export web build
+        run: |
+          mkdir -p build/web
+          ~/godot/godot --headless --import || true
+          ~/godot/godot --headless --export-release "Web" build/web/index.html 2>&1 | tee export.log
+          test -f build/web/index.wasm || (echo "EXPORT FAILED" && exit 1)
+          ls -la build/web
+
+      - name: Size check (brotli, limit 8 MB)
+        run: |
+          sudo apt-get install -y -qq brotli >/dev/null
+          python3 - <<'EOF'
+          import os, subprocess, sys
+          total = 0
+          for f in sorted(os.listdir("build/web")):
+              p = os.path.join("build/web", f)
+              raw = os.path.getsize(p)
+              br = len(subprocess.run(["brotli", "-c", "-q", "11", p], capture_output=True).stdout)
+              total += br
+              print(f"{f:<28}{raw/1e6:8.2f} MB raw {br/1e6:8.2f} MB brotli")
+          print(f"TOTAL brotli: {total/1e6:.2f} MB")
+          open(os.environ["GITHUB_STEP_SUMMARY"], "a").write(f"### Web build size: {total/1e6:.2f} MB (brotli)\n")
+          sys.exit(1 if total > 8e6 else 0)
+          EOF
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: build/web
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
