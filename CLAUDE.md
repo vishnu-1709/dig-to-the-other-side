@@ -53,11 +53,17 @@ Full design: see the "Dig to the Other Side — Build Plan" doc. This file is th
 - CI runs: unit test, 8-run bot, full-game bot to the breakthrough (~32 game-min), web export,
   size check, browser smoke test with screenshots pushed to the `ci-report` branch.
 
-## Ads
-- Rewarded: offline x3, end-of-run double, +10 s fuel near rare ore (1/run), 3-min overclock.
-- Midgame: first entry to a new biome (max once per 3 min), after a Reforge. Never mid-run.
-  Never in a new player's first 2 minutes.
-- Pause game + mute audio during ads. If an ad fails, give a smaller fallback reward.
+## Ads (CrazyGames ad requirements — QA checks these)
+- Rewarded: offline x3, end-of-run x2, keep-digging +10 s, 3-min overclock (also buyable with coins).
+- Midgame: first entry to a new biome (max once per 3 min), after a Reforge. Never mid-run,
+  never on navigation buttons, never in a new player's first 2 minutes.
+- Never a midgame AND the keep-digging rewarded between the same two runs; keep-digging is
+  offered at most every 3rd run and once per run.
+- adError => NO reward. Show "No ad available" and leave the player where they were.
+- Mute + pause only on adStarted; restore on adFinished/adError. Block UI while an ad is loading.
+- Watch-ad and skip buttons: same size, font and colour; label every ad button "(watch ad)".
+- Confirm every reward with a toast. gameplayStart/Stop around runs; happytime only on
+  breakthrough and Reforge. Save also goes to SDK.data (cloud save).
 
 ## Working rules
 - One feature per change. Export, run the smoke test and the balance sim, then commit.

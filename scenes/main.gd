@@ -41,6 +41,11 @@ var _result_title: Label
 var _result_text: Label
 var _refuel_btn: Button
 var _double_btn: Button
+var _overclock_coin_btn: Button
+var _blocker: Control
+var _toast: Label
+var _toast_tween: Tween
+var _runs_since_refuel := 2
 var _popup: Control
 var _popup_text: Label
 var _popup_amount := 0.0
@@ -63,6 +68,7 @@ func _ready() -> void:
 	add_child(shaft)
 	shaft.run_ended.connect(_on_run_ended)
 	shaft.biome_entered.connect(_on_biome_entered)
+	Save.cloud_loaded.connect(_on_cloud_loaded)
 	_build_ui()
 	get_tree().root.size_changed.connect(_apply_layout)
 	_apply_layout()
@@ -119,9 +125,12 @@ func _on_run_ended(earned: float, end_row: int, breakthrough: bool) -> void:
 	Portal.gameplay_stop()
 	Music.stop_run()
 	_hud.visible = false
+	var midgame_shown := false
 	if Game.pending_midgame:
 		Game.pending_midgame = false
-		await Portal.midgame("new_biome")
+		midgame_shown = await Portal.midgame("new_biome")
+	if breakthrough:
+		Portal.happytime()
 	var b: Dictionary = Game.biomes[Game.biome_index(end_row)]
 	if breakthrough:
 		_result_title.text = "YOU BROKE THROUGH!"
@@ -129,7 +138,12 @@ func _on_run_ended(earned: float, end_row: int, breakthrough: bool) -> void:
 	else:
 		_result_title.text = "OUT OF FUEL"
 		_result_text.text = "+%s coins\nReached %s km  (%s)" % [Game.fmt(earned), Game.fmt(Game.depth_km(end_row)), b["name"]]
-	_refuel_btn.visible = not breakthrough and not shaft.refueled
+	# CrazyGames policy: never a midgame AND a keep-playing rewarded between the same two runs,
+	# and don't offer the "continue" ad after every run.
+	_runs_since_refuel += 1
+	_refuel_btn.visible = not breakthrough and not shaft.refueled and not midgame_shown and _runs_since_refuel >= 3
+	if _refuel_btn.visible:
+		_runs_since_refuel = 0
 	_result.visible = true
 	_result_ready = true
 	_count_up(_result_text, earned)
@@ -175,19 +189,25 @@ func _double() -> void:
 	if not _result_ready:
 		return
 	_result_ready = false
-	var ok: bool = await Portal.rewarded("double_run")
+	var ok := await _ad("double_run")
 	_result_ready = true
-	_collect(2.0 if ok else 1.2)
+	if ok:
+		_collect(2.0)
+		_show_toast("Coins doubled!", UiTheme.GOLD)
+	else:
+		_show_toast("No ad available right now", Color("ff8a8a"))
 
 
 func _refuel() -> void:
 	if not _result_ready or shaft.refueled:
 		return
 	_result_ready = false
-	var ok: bool = await Portal.rewarded("refuel")
+	var ok := await _ad("refuel")
 	if not ok:
 		_result_ready = true
+		_show_toast("No ad available right now", Color("ff8a8a"))
 		return
+	_show_toast("Refueled +10s!", UiTheme.ORANGE)
 	_result.visible = false
 	_hud.visible = true
 	state = State.RUN
@@ -199,12 +219,32 @@ func _refuel() -> void:
 func _overclock() -> void:
 	if state != State.HUB or Game.overclock_left() > 0.0:
 		return
-	var ok: bool = await Portal.rewarded("overclock")
+	var ok := await _ad("overclock")
 	if ok:
-		Game.start_overclock()
-		Music.sfx("upgrade", -2.0, 1.3)
-		Save.save_game()
+		_activate_overclock()
+	else:
+		_show_toast("No ad available right now", Color("ff8a8a"))
 	_refresh_hub()
+
+
+## Coin alternative to the overclock ad (CrazyGames asks for a non-ad way to get rewards).
+func overclock_price() -> float:
+	return ceilf(Game.cost("drill") * 3.0)
+
+
+func _overclock_coins() -> void:
+	if state != State.HUB or Game.overclock_left() > 0.0 or Game.coins < overclock_price():
+		return
+	Game.add_coins(-overclock_price())
+	_activate_overclock()
+	_refresh_hub()
+
+
+func _activate_overclock() -> void:
+	Game.start_overclock()
+	Music.sfx("upgrade", -2.0, 1.3)
+	Save.save_game()
+	_show_toast("Overclock active: 2x dig speed!", UiTheme.CYAN)
 
 
 func _reforge() -> void:
@@ -216,6 +256,7 @@ func _reforge() -> void:
 		return
 	_reforged_gain = Game.reforge()
 	Music.sfx("biome_enter", 0.0)
+	Portal.happytime()
 	Save.save_game()
 	await Portal.midgame("reforge")
 	_show_hub()
@@ -239,16 +280,44 @@ func _show_offline_popup() -> void:
 func _claim_offline(mult: float) -> void:
 	if state != State.POPUP:
 		return
-	state = State.HUB
 	if mult > 1.0:
-		var ok: bool = await Portal.rewarded("offline_x3")
+		state = State.HUB  # block double taps while the ad runs
+		var ok := await _ad("offline_x3")
 		if not ok:
-			mult = 1.0
+			state = State.POPUP
+			_show_toast("No ad available right now", Color("ff8a8a"))
+			return
+		_show_toast("x3 claimed!", UiTheme.GOLD)
+	state = State.HUB
 	Game.add_coins(_popup_amount * mult)
 	Game.offline_seconds = 0.0
 	Music.sfx("coin", -2.0)
 	Save.save_game()
 	_show_hub()
+
+
+## Rewarded ad with the UI blocked until it finishes or fails (CrazyGames requirement).
+func _ad(reason: String) -> bool:
+	_blocker.visible = true
+	var ok: bool = await Portal.rewarded(reason)
+	_blocker.visible = false
+	return ok
+
+
+func _show_toast(text: String, color: Color) -> void:
+	_toast.text = text
+	_toast.add_theme_color_override("font_color", color)
+	if _toast_tween:
+		_toast_tween.kill()
+	_toast.modulate.a = 1.0
+	_toast_tween = create_tween()
+	_toast_tween.tween_interval(1.6)
+	_toast_tween.tween_property(_toast, "modulate:a", 0.0, 0.5)
+
+
+func _on_cloud_loaded() -> void:
+	if state == State.HUB:
+		_show_hub()
 
 
 # ---------------- per frame ----------------
@@ -377,7 +446,16 @@ func _build_ui() -> void:
 	_hub_rate = _label(_side, "", "Small")
 	var dig := _button(_side, "DIG!", _start_run, "Primary")
 	dig.custom_minimum_size = Vector2(0, 96)
-	_overclock_btn = _button(_side, "", _overclock, "Ad")
+	var oc_row := HBoxContainer.new()
+	oc_row.add_theme_constant_override("separation", 8)
+	_side.add_child(oc_row)
+	_overclock_btn = _button(oc_row, "", _overclock, "Ad")
+	_overclock_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_overclock_coin_btn = _button(oc_row, "", _overclock_coins, "Ad")
+	_overclock_coin_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_overclock_coin_btn.custom_minimum_size = Vector2(0, 56)
+	_overclock_btn.add_theme_font_size_override("font_size", 19)
+	_overclock_coin_btn.add_theme_font_size_override("font_size", 19)
 	_reforge_btn = _button(_side, "", _reforge, "Special")
 	_sound_btn = _button(_side, "", _toggle_sound)
 	_sound_btn.custom_minimum_size = Vector2(0, 48)
@@ -427,17 +505,45 @@ func _build_ui() -> void:
 	var rv: VBoxContainer = _result.get_meta("box")
 	_result_title = _label(rv, "", "Title")
 	_result_text = _label(rv, "", "")
-	_button(rv, "COLLECT", _collect.bind(1.0), "Primary")
-	_double_btn = _button(rv, "DOUBLE IT  (watch ad)", _double, "Ad")
-	_refuel_btn = _button(rv, "REFUEL +10s  (watch ad)", _refuel, "Ad")
+	var pair := HBoxContainer.new()
+	pair.add_theme_constant_override("separation", 10)
+	rv.add_child(pair)
+	var collect := _button(pair, "COLLECT", _collect.bind(1.0), "Primary")
+	collect.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_double_btn = _button(pair, "x2  (watch ad)", _double, "Primary")
+	_double_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_refuel_btn = _button(rv, "KEEP DIGGING +10s  (watch ad)", _refuel, "Primary")
 
 	# --- offline earnings popup ---
 	_popup = _centered_panel(_root)
 	var pv: VBoxContainer = _popup.get_meta("box")
 	_label(pv, "WELCOME BACK!", "Title")
 	_popup_text = _label(pv, "", "")
-	_button(pv, "CLAIM", _claim_offline.bind(1.0), "Primary")
-	_button(pv, "CLAIM x3  (watch ad)", _claim_offline.bind(3.0), "Ad")
+	var ppair := HBoxContainer.new()
+	ppair.add_theme_constant_override("separation", 10)
+	pv.add_child(ppair)
+	var claim := _button(ppair, "CLAIM", _claim_offline.bind(1.0), "Primary")
+	claim.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var claim3 := _button(ppair, "x3  (watch ad)", _claim_offline.bind(3.0), "Primary")
+	claim3.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	# --- toast + ad blocker (on top of everything) ---
+	_toast = _label(_root, "", "Title")
+	_toast.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	_toast.offset_top = 40
+	_toast.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_toast.add_theme_font_size_override("font_size", 34)
+	_toast.modulate.a = 0.0
+	_blocker = ColorRect.new()
+	(_blocker as ColorRect).color = Color(0, 0, 0, 0.6)
+	_blocker.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_blocker.mouse_filter = Control.MOUSE_FILTER_STOP
+	_blocker.visible = false
+	_root.add_child(_blocker)
+	var wait := _label(_blocker, "Loading ad...", "Title")
+	wait.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	wait.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	wait.grow_vertical = Control.GROW_DIRECTION_BOTH
 
 
 func _toggle_sound() -> void:
@@ -463,8 +569,11 @@ func _refresh_hub() -> void:
 		var b: Dictionary = Game.biomes[Game.deepest_biome]
 		_hub_record.text = "Deepest: %s  -  record %s km" % [b["name"], Game.fmt(Game.depth_km(Game.best_row))]
 	var oc := Game.overclock_left()
-	_overclock_btn.text = ("OVERCLOCK ACTIVE  " + Game.fmt_time(oc)) if oc > 0.0 else "OVERCLOCK: 2x dig speed, 3 min  (ad)"
+	_overclock_btn.text = ("OVERCLOCK ACTIVE  " + Game.fmt_time(oc)) if oc > 0.0 else "2x SPEED 3 min  (watch ad)"
 	_overclock_btn.disabled = oc > 0.0
+	_overclock_coin_btn.visible = oc <= 0.0
+	_overclock_coin_btn.text = "2x SPEED 3 min:  %s coins" % Game.fmt(overclock_price())
+	_overclock_coin_btn.disabled = Game.coins < overclock_price()
 	_reforge_btn.visible = Game.can_reforge()
 	if _reforge_armed:
 		_reforge_btn.text = "TAP AGAIN: reset all for +%d Shards" % Game.reforge_gain()

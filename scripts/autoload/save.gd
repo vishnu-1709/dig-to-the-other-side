@@ -1,6 +1,10 @@
 extends Node
 ## Persists progress to user:// (IndexedDB on the web). Versioned so later fields can be migrated.
 ## Saves every 10 s, after runs and purchases. Open the game with ?reset to wipe progress.
+## On CrazyGames the same JSON is also written to SDK.data (cloud save for logged-in players);
+## once the SDK is ready, a newer cloud save replaces the local one.
+
+signal cloud_loaded
 
 const PATH := "user://save.json"
 const VERSION := 1
@@ -8,6 +12,7 @@ const INTERVAL_S := 10.0
 
 var enabled := true
 var _timer := 0.0
+var _local_saved_at := 0.0
 
 
 func _ready() -> void:
@@ -25,6 +30,21 @@ func _ready() -> void:
 		return
 	load_game()
 	Game.levels_changed.connect(save_game)
+	Portal.ready_changed.connect(_on_portal_ready)
+
+
+func _on_portal_ready() -> void:
+	if not enabled or Portal.backend != "crazygames":
+		return
+	var raw := Portal.data_get("save")
+	if raw == "":
+		save_game()  # first run on this account: push local progress up
+		return
+	var data = JSON.parse_string(raw)
+	if data is Dictionary and float(data.get("saved_at", 0.0)) > _local_saved_at + 1.0:
+		_apply(data)
+		print("SAVE cloud save applied")
+		cloud_loaded.emit()
 
 
 func _process(delta: float) -> void:
@@ -58,11 +78,14 @@ func save_game() -> void:
 		"play_time": Game.play_time,
 		"saved_at": Time.get_unix_time_from_system(),
 	}
+	var json := JSON.stringify(data)
+	_local_saved_at = float(data["saved_at"])
+	Portal.data_set("save", json)
 	var f := FileAccess.open(PATH, FileAccess.WRITE)
 	if f == null:
 		push_warning("save failed: %s" % FileAccess.get_open_error())
 		return
-	f.store_string(JSON.stringify(data))
+	f.store_string(json)
 
 
 func load_game() -> void:
@@ -75,6 +98,10 @@ func load_game() -> void:
 	if not (data is Dictionary):
 		push_warning("save unreadable, starting fresh")
 		return
+	_apply(data)
+
+
+func _apply(data: Dictionary) -> void:
 	data = _migrate(data)
 	Game.coins = float(data.get("coins", 0.0))
 	var lv: Dictionary = data.get("levels", {})
@@ -88,6 +115,7 @@ func load_game() -> void:
 	Game.overclock_until = float(data.get("overclock_until", 0.0))
 	Game.play_time = float(data.get("play_time", 0.0))
 	var saved_at := float(data.get("saved_at", 0.0))
+	_local_saved_at = maxf(_local_saved_at, saved_at)
 	if saved_at > 0.0:
 		Game.offline_seconds = maxf(Time.get_unix_time_from_system() - saved_at, 0.0)
 	Music.set_muted.call_deferred(bool(data.get("muted", false)))

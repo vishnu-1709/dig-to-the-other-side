@@ -102,6 +102,15 @@ jobs:
           sys.exit(1 if total > 8e6 else 0)
           EOF
 
+      - name: Package upload zip and publish to the "latest" release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          (cd build/web && zip -qr ../../dig-to-the-other-side-web.zip .)
+          ls -la dig-to-the-other-side-web.zip
+          gh release view latest >/dev/null 2>&1 || gh release create latest --title "Latest web build" --notes "Ready-to-upload HTML5 build: index.html is at the root of the zip. Rebuilt on every push to main."
+          gh release upload latest dig-to-the-other-side-web.zip --clobber
+
       - name: Smoke test in headless Chromium
         run: |
           pip install -q playwright
