@@ -31,12 +31,22 @@ func _ready() -> void:
 	autoplay = "--autoplay" in OS.get_cmdline_user_args()
 	if autoplay:
 		Engine.time_scale = 8.0
+	get_tree().root.size_changed.connect(_apply_layout)
+	_apply_layout()
 	shaft = preload("res://scenes/shaft.gd").new()
 	add_child(shaft)
 	shaft.run_ended.connect(_on_run_ended)
 	_build_ui()
 	_show_hub()
 	print("BOOT_OK biomes=%d rows=%d" % [Game.biomes.size(), Game.total_rows])
+
+
+## Portrait screens use a 720x1280 base so UI stays readable on phones.
+func _apply_layout() -> void:
+	var win := get_window().size
+	var want := Vector2i(720, 1280) if win.y > win.x else Vector2i(1280, 720)
+	if get_tree().root.content_scale_size != want:
+		get_tree().root.content_scale_size = want
 
 
 # ---------------- flow ----------------
