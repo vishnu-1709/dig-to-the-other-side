@@ -1,0 +1,63 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+PORTAL ready backend=fake
+BOOT_OK biomes=8 rows=1292
+RUN_START row=0 fuel=15.0 power=1.00
+PORTAL gameplay_start
+RUN_END earned=28.9 row=57 rows_dug=57 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 28.9 x1.0 total=28.9
+BUY fuel -> 1
+BUY fuel -> 2
+RUN_START row=0 fuel=18.8 power=1.00
+PORTAL gameplay_start
+RUN_END earned=33.3 row=69 rows_dug=69 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 33.3 x1.0 total=40.0
+BUY fuel -> 3
+BUY drill -> 1
+RUN_START row=0 fuel=21.1 power=1.10
+PORTAL gameplay_start
+RUN_END earned=41.4 row=89 rows_dug=89 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 41.4 x1.0 total=51.6
+BUY drill -> 2
+BUY fuel -> 4
+RUN_START row=0 fuel=23.6 power=1.21
+PORTAL gameplay_start
+RUN_END earned=54.3 row=97 rows_dug=97 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 54.3 x1.0 total=70.2
+BUY drill -> 3
+BUY fuel -> 5
+BUY drill -> 4
+RUN_START row=90 fuel=26.4 power=1.46
+PORTAL gameplay_start
+RUN_END earned=62.3 row=153 rows_dug=63 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 62.3 x1.0 total=65.8
+BUY ore -> 1
+BUY fuel -> 6
+RUN_START row=90 fuel=29.6 power=1.46
+PORTAL gameplay_start
+RUN_END earned=67.9 row=161 rows_dug=71 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 67.9 x1.0 total=81.7
+BUY drill -> 5
+BUY ore -> 2
+RUN_START row=90 fuel=29.6 power=1.61
+PORTAL gameplay_start
+RUN_END earned=90.1 row=172 rows_dug=82 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 90.1 x1.0 total=114.2
+BUY drill -> 6
+BUY fuel -> 7
+BUY ore -> 3
+RUN_START row=90 fuel=33.2 power=1.77
+PORTAL gameplay_start
+RUN_END earned=97.7 row=190 rows_dug=100 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 97.7 x1.0 total=111.2
+BUY drill -> 7
+BUY fuel -> 8
+AUTOPLAY_OK runs=8 best_row=190 deepest_biome=1 coins=32 levels={ "fuel": 8, "drill": 7, "ore": 3, "magnet": 0, "shield": 0, "miners": 0 }

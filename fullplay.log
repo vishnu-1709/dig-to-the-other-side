@@ -1,0 +1,343 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+PORTAL ready backend=fake
+BOOT_OK biomes=8 rows=1292
+RUN_START row=0 fuel=15.0 power=1.00
+PORTAL gameplay_start
+RUN_END earned=21.4 row=46 rows_dug=46 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 21.4 x1.0 total=21.4
+BUY fuel -> 1
+RUN_START row=0 fuel=16.8 power=1.00
+PORTAL gameplay_start
+RUN_END earned=27.4 row=64 rows_dug=64 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 27.4 x1.0 total=38.8
+BUY fuel -> 2
+BUY fuel -> 3
+RUN_START row=0 fuel=21.1 power=1.00
+PORTAL gameplay_start
+RUN_END earned=37.4 row=69 rows_dug=69 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 37.4 x1.0 total=49.1
+BUY drill -> 1
+BUY drill -> 2
+RUN_START row=0 fuel=21.1 power=1.21
+PORTAL gameplay_start
+RUN_END earned=47.6 row=92 rows_dug=92 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 47.6 x1.0 total=64.2
+BUY fuel -> 4
+BUY drill -> 3
+BUY fuel -> 5
+RUN_START row=90 fuel=26.4 power=1.33
+PORTAL gameplay_start
+RUN_END earned=48.3 row=149 rows_dug=59 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 48.3 x1.0 total=51.6
+BUY drill -> 4
+BUY ore -> 1
+RUN_START row=90 fuel=26.4 power=1.46
+PORTAL gameplay_start
+RUN_END earned=63.4 row=156 rows_dug=66 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 63.4 x1.0 total=66.0
+BUY fuel -> 6
+BUY drill -> 5
+RUN_START row=90 fuel=29.6 power=1.61
+PORTAL gameplay_start
+RUN_END earned=76.2 row=174 rows_dug=84 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 76.2 x1.0 total=87.1
+BUY ore -> 2
+BUY drill -> 6
+RUN_START row=90 fuel=29.6 power=1.77
+PORTAL gameplay_start
+RUN_END earned=99.2 row=180 rows_dug=90 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 99.2 x1.0 total=123.9
+BUY fuel -> 7
+BUY ore -> 3
+BUY drill -> 7
+RUN_START row=90 fuel=33.2 power=1.95
+PORTAL gameplay_start
+RUN_END earned=109.6 row=199 rows_dug=109 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 109.6 x1.0 total=127.3
+BUY fuel -> 8
+BUY ore -> 4
+BUY drill -> 8
+RUN_START row=90 fuel=37.1 power=2.14
+PORTAL gameplay_start
+RUN_END earned=136.7 row=209 rows_dug=119 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 136.7 x1.0 total=137.7
+BUY ore -> 5
+BUY fuel -> 9
+RUN_START row=200 fuel=41.6 power=2.14
+PORTAL gameplay_start
+RUN_END earned=123.1 row=263 rows_dug=63 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 123.1 x1.0 total=163.3
+BUY drill -> 9
+BUY ore -> 6
+RUN_START row=200 fuel=41.6 power=2.36
+PORTAL gameplay_start
+RUN_END earned=174.5 row=278 rows_dug=78 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 174.5 x1.0 total=227.9
+BUY fuel -> 10
+BUY drill -> 10
+BUY ore -> 7
+RUN_START row=200 fuel=46.6 power=2.59
+PORTAL gameplay_start
+RUN_END earned=203.8 row=293 rows_dug=93 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 203.8 x1.0 total=242.7
+BUY drill -> 11
+BUY fuel -> 11
+BUY ore -> 8
+RUN_START row=200 fuel=52.2 power=2.85
+PORTAL gameplay_start
+RUN_END earned=326.5 row=318 rows_dug=118 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 326.5 x1.0 total=344.4
+BUY shield -> 1
+BUY drill -> 12
+BUY fuel -> 12
+RUN_START row=200 fuel=58.4 power=3.14
+PORTAL gameplay_start
+RUN_END earned=369.4 row=335 rows_dug=135 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 369.4 x1.0 total=460.3
+BUY ore -> 9
+BUY drill -> 13
+BUY fuel -> 13
+BUY ore -> 10
+RUN_START row=330 fuel=65.5 power=3.45
+PORTAL gameplay_start
+RUN_END earned=454.8 row=412 rows_dug=82 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 454.8 x1.0 total=502.9
+BUY drill -> 14
+BUY magnet -> 1
+BUY ore -> 11
+BUY fuel -> 14
+RUN_START row=330 fuel=73.3 power=3.80
+PORTAL gameplay_start
+RUN_END earned=724.2 row=431 rows_dug=101 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 724.2 x1.0 total=728.1
+BUY drill -> 15
+BUY shield -> 2
+BUY ore -> 12
+BUY drill -> 16
+RUN_START row=330 fuel=73.3 power=4.59
+PORTAL gameplay_start
+RUN_END earned=813.7 row=448 rows_dug=118 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 813.7 x1.0 total=942.1
+BUY fuel -> 15
+BUY ore -> 13
+BUY drill -> 17
+BUY fuel -> 16
+BUY ore -> 14
+RUN_START row=330 fuel=92.0 power=5.05
+PORTAL gameplay_start
+RUN_END earned=1394.4 row=488 rows_dug=158 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 1394.4 x1.0 total=1395.2
+BUY drill -> 18
+BUY drill -> 19
+BUY ore -> 15
+BUY shield -> 3
+BUY drill -> 20
+RUN_START row=480 fuel=92.0 power=6.73
+PORTAL gameplay_start
+RUN_END earned=1596.0 row=580 rows_dug=100 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 1596.0 x1.0 total=1682.8
+BUY ore -> 16
+BUY miners -> 1
+BUY drill -> 21
+BUY ore -> 17
+BUY miners -> 2
+RUN_START row=480 fuel=92.0 power=7.40
+PORTAL gameplay_start
+RUN_END earned=1767.3 row=590 rows_dug=110 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 1767.3 x1.0 total=2638.9
+BUY magnet -> 2
+BUY drill -> 22
+BUY ore -> 18
+BUY miners -> 3
+BUY drill -> 23
+BUY ore -> 19
+RUN_START row=480 fuel=92.0 power=8.95
+PORTAL gameplay_start
+RUN_END earned=3762.3 row=614 rows_dug=134 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 3762.3 x1.0 total=5278.7
+BUY miners -> 4
+BUY shield -> 4
+BUY drill -> 24
+BUY ore -> 20
+BUY drill -> 25
+BUY miners -> 5
+BUY ore -> 21
+BUY drill -> 26
+RUN_START row=480 fuel=92.0 power=11.92
+PORTAL gameplay_start
+RUN_END earned=4691.1 row=650 rows_dug=170 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 4691.1 x1.0 total=7885.8
+BUY ore -> 22
+BUY miners -> 6
+BUY drill -> 27
+BUY ore -> 23
+BUY miners -> 7
+BUY drill -> 28
+BUY shield -> 5
+BUY ore -> 24
+RUN_START row=650 fuel=92.0 power=14.42
+PORTAL gameplay_start
+RUN_END earned=4655.3 row=716 rows_dug=66 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 4655.3 x1.0 total=10696.9
+BUY miners -> 8
+BUY drill -> 29
+BUY magnet -> 3
+BUY ore -> 25
+BUY drill -> 30
+BUY miners -> 9
+BUY ore -> 26
+RUN_START row=650 fuel=92.0 power=17.45
+PORTAL gameplay_start
+RUN_END earned=5855.3 row=727 rows_dug=77 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 5855.3 x1.0 total=15841.8
+BUY drill -> 31
+BUY miners -> 10
+BUY ore -> 27
+BUY drill -> 32
+BUY shield -> 6
+BUY ore -> 28
+BUY miners -> 11
+RUN_START row=650 fuel=92.0 power=21.11
+PORTAL gameplay_start
+RUN_END earned=9077.6 row=740 rows_dug=90 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 9077.6 x1.0 total=23778.3
+BUY drill -> 33
+BUY ore -> 29
+BUY drill -> 34
+BUY miners -> 12
+BUY ore -> 30
+BUY drill -> 35
+BUY miners -> 13
+BUY ore -> 31
+RUN_START row=650 fuel=92.0 power=28.10
+PORTAL gameplay_start
+RUN_END earned=13711.4 row=777 rows_dug=127 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 13711.4 x1.0 total=32854.4
+BUY drill -> 36
+BUY shield -> 7
+BUY magnet -> 4
+BUY miners -> 14
+BUY ore -> 32
+BUY drill -> 37
+BUY miners -> 15
+RUN_START row=650 fuel=92.0 power=34.00
+PORTAL gameplay_start
+RUN_END earned=23458.3 row=799 rows_dug=149 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 23458.3 x1.0 total=50777.7
+BUY ore -> 33
+BUY drill -> 38
+BUY drill -> 39
+BUY ore -> 34
+BUY miners -> 16
+BUY drill -> 40
+BUY ore -> 35
+BUY shield -> 8
+RUN_START row=650 fuel=92.0 power=45.26
+PORTAL gameplay_start
+RUN_END earned=37850.1 row=848 rows_dug=198 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 37850.1 x1.0 total=74048.2
+BUY miners -> 17
+BUY drill -> 41
+BUY ore -> 36
+BUY miners -> 18
+BUY drill -> 42
+BUY ore -> 37
+BUY miners -> 19
+BUY drill -> 43
+RUN_START row=840 fuel=92.0 power=60.24
+PORTAL gameplay_start
+RUN_END earned=78162.1 row=1026 rows_dug=186 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 78162.1 x1.0 total=188746.6
+BUY ore -> 38
+BUY drill -> 44
+BUY miners -> 20
+BUY ore -> 39
+BUY shield -> 9
+BUY drill -> 45
+BUY ore -> 40
+BUY miners -> 21
+BUY drill -> 46
+BUY ore -> 41
+BUY miners -> 22
+BUY drill -> 47
+RUN_START row=840 fuel=92.0 power=88.20
+PORTAL gameplay_start
+RUN_END earned=132822.4 row=1083 rows_dug=243 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 132822.4 x1.0 total=327371.1
+BUY ore -> 42
+BUY miners -> 23
+BUY drill -> 48
+BUY shield -> 10
+BUY ore -> 43
+BUY drill -> 49
+BUY miners -> 24
+BUY ore -> 44
+BUY drill -> 50
+BUY miners -> 25
+BUY ore -> 45
+RUN_START row=1062 fuel=92.0 power=117.39
+PORTAL gameplay_start
+RUN_END earned=193116.3 row=1224 rows_dug=162 breakthrough=false
+PORTAL gameplay_stop
+COLLECT 193116.3 x1.0 total=659358.5
+BUY drill -> 51
+BUY ore -> 46
+BUY miners -> 26
+BUY drill -> 52
+BUY ore -> 47
+BUY drill -> 53
+BUY miners -> 27
+BUY ore -> 48
+BUY drill -> 54
+BUY miners -> 28
+BUY ore -> 49
+BUY drill -> 55
+RUN_START row=1062 fuel=92.0 power=189.06
+PORTAL gameplay_start
+RUN_END earned=376235.8 row=1291 rows_dug=229 breakthrough=true
+PORTAL gameplay_stop
+PORTAL happytime
+COLLECT 376235.8 x1.0 total=973063.1
+BUY miners -> 29
+BUY ore -> 50
+BUY drill -> 56
+BUY miners -> 30
+BUY ore -> 51
+BUY drill -> 57
+BUY drill -> 58
+BUY ore -> 52
+BUY miners -> 31
+REFORGE +19 shards (total 19)
+AUTOPLAY_FULL broke_through=true game_min=31.7 runs=33 levels={ "fuel": 0, "drill": 0, "ore": 0, "magnet": 0, "shield": 0, "miners": 0 } reforge_shards=19
