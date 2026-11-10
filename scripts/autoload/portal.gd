@@ -14,7 +14,7 @@ signal _ad_done
 const MIDGAME_COOLDOWN_S := 180.0
 const NO_MIDGAME_FIRST_S := 120.0
 const INIT_TIMEOUT_S := 5.0
-const AD_TIMEOUT_S := 90.0
+const AD_TIMEOUT_S := 45.0
 
 var backend := "fake"
 var ads_enabled := true  # from data/portal.json; false for CrazyGames Basic Launch
@@ -141,8 +141,11 @@ func _request(type: String) -> bool:
 	_cb_done = JavaScriptBridge.create_callback(func(args): _on_done(str(args[0]) if args.size() > 0 else "error:other"))
 	var win := JavaScriptBridge.get_interface("window")
 	win.dttosAd(type, _cb_start, _cb_done)
-	get_tree().create_timer(AD_TIMEOUT_S, true, false, true).timeout.connect(_ad_timeout)
-	await _ad_done
+	# The SDK can answer synchronously (e.g. adError when ads are disabled). Only wait
+	# if the result has not already arrived, or we would wait forever.
+	if _ad_pending:
+		get_tree().create_timer(AD_TIMEOUT_S, true, false, true).timeout.connect(_ad_timeout)
+		await _ad_done
 	print("PORTAL %s -> %s" % [type, _ad_result])
 	return _ad_result == "finished"
 
