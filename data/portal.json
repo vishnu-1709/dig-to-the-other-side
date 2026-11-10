@@ -1,0 +1,4 @@
+{
+  "_doc": "ads_enabled=false for CrazyGames Basic Launch (ads not allowed there): every ad button is hidden and no midgame ads run. Set true for Full Launch and re-upload.",
+  "ads_enabled": false
+}

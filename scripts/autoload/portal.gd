@@ -17,6 +17,7 @@ const INIT_TIMEOUT_S := 5.0
 const AD_TIMEOUT_S := 90.0
 
 var backend := "fake"
+var ads_enabled := true  # from data/portal.json; false for CrazyGames Basic Launch
 var is_ready := false
 var ad_showing := false
 var _last_midgame := -1.0e9
@@ -30,6 +31,11 @@ var _was_paused := false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	var f := FileAccess.open("res://data/portal.json", FileAccess.READ)
+	if f:
+		var cfg = JSON.parse_string(f.get_as_text())
+		if cfg is Dictionary:
+			ads_enabled = bool(cfg.get("ads_enabled", true))
 	if not OS.has_feature("web"):
 		_set_ready("fake")
 		return
@@ -96,6 +102,8 @@ func happytime() -> void:
 # ---------------- ads ----------------
 ## Rewarded ad. true only when the ad finished. Usage: var ok: bool = await Portal.rewarded("x")
 func rewarded(reason: String) -> bool:
+	if not ads_enabled:
+		return false
 	print("PORTAL rewarded ", reason)
 	if backend != "crazygames":
 		_on_started()
@@ -108,6 +116,8 @@ func rewarded(reason: String) -> bool:
 ## Interstitial at a natural break. Respects cooldown and the new-player grace period.
 ## Returns true if an ad was actually shown.
 func midgame(reason: String) -> bool:
+	if not ads_enabled:
+		return false
 	var now := Time.get_ticks_msec() / 1000.0
 	if now < NO_MIDGAME_FIRST_S or now - _last_midgame < MIDGAME_COOLDOWN_S:
 		print("PORTAL midgame skipped ", reason)

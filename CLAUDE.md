@@ -54,6 +54,8 @@ Full design: see the "Dig to the Other Side — Build Plan" doc. This file is th
   size check, browser smoke test with screenshots pushed to the `ci-report` branch.
 
 ## Ads (CrazyGames ad requirements — QA checks these)
+- `data/portal.json` `ads_enabled`: **false for Basic Launch** (CrazyGames allows no ads there; all
+  watch-ad buttons hidden, no midgames). Flip to true for Full Launch.
 - Rewarded: offline x3, end-of-run x2, keep-digging +10 s, 3-min overclock (also buyable with coins).
 - Midgame: first entry to a new biome (max once per 3 min), after a Reforge. Never mid-run,
   never on navigation buttons, never in a new player's first 2 minutes.

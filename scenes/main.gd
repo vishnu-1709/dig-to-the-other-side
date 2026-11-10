@@ -41,6 +41,7 @@ var _result_title: Label
 var _result_text: Label
 var _refuel_btn: Button
 var _double_btn: Button
+var _claim3_btn: Button
 var _overclock_coin_btn: Button
 var _blocker: Control
 var _toast: Label
@@ -143,7 +144,7 @@ func _on_run_ended(earned: float, end_row: int, breakthrough: bool) -> void:
 	# CrazyGames policy: never a midgame AND a keep-playing rewarded between the same two runs,
 	# and don't offer the "continue" ad after every run.
 	_runs_since_refuel += 1
-	_refuel_btn.visible = not breakthrough and not shaft.refueled and not midgame_shown and _runs_since_refuel >= 3
+	_refuel_btn.visible = Portal.ads_enabled and not breakthrough and not shaft.refueled and not midgame_shown and _runs_since_refuel >= 3
 	if _refuel_btn.visible:
 		_runs_since_refuel = 0
 	_result.visible = true
@@ -529,8 +530,11 @@ func _build_ui() -> void:
 	pv.add_child(ppair)
 	var claim := _button(ppair, "CLAIM", _claim_offline.bind(1.0), "Primary")
 	claim.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var claim3 := _button(ppair, "x3  (watch ad)", _claim_offline.bind(3.0), "Primary")
-	claim3.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_claim3_btn = _button(ppair, "x3  (watch ad)", _claim_offline.bind(3.0), "Primary")
+	_claim3_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# Basic Launch build: no ads allowed, so hide every watch-ad button
+	_double_btn.visible = Portal.ads_enabled
+	_claim3_btn.visible = Portal.ads_enabled
 
 	# --- toast + ad blocker (on top of everything) ---
 	_toast = _label(_root, "", "Title")
@@ -576,6 +580,7 @@ func _refresh_hub() -> void:
 	var oc := Game.overclock_left()
 	_overclock_btn.text = ("OVERCLOCK ACTIVE  " + Game.fmt_time(oc)) if oc > 0.0 else "2x SPEED 3 min  (watch ad)"
 	_overclock_btn.disabled = oc > 0.0
+	_overclock_btn.visible = Portal.ads_enabled or oc > 0.0
 	_overclock_coin_btn.visible = oc <= 0.0
 	_overclock_coin_btn.text = "2x SPEED 3 min:  %s coins" % Game.fmt(overclock_price())
 	_overclock_coin_btn.disabled = Game.coins < overclock_price()
